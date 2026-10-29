@@ -18,7 +18,7 @@ The pictures show sample data from a local test setup.
 ## Features
 
 - Link and six-digit PIN, valid only between arrival and departure
-- Open the front door, open the apartment door and, for a lock, lock it again
+- Two doors, each of which can be hidden, with its own name and mode (open, unlock, lock)
 - Location check with a configurable radius, or turn it off
 - German and English, fixed dark design
 - Admin for stays, permanent admin users, battery warnings and an access log

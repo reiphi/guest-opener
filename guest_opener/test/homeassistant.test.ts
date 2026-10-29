@@ -57,16 +57,26 @@ test("lock entities unlatch on open and lock on lock", async () => {
   assert.equal(calls[0].auth, "Bearer secret-token");
 });
 
-test("unlock-only apartment doors unlock instead of unlatching", async () => {
+test("unlock_and_lock uses unlock, and a house lock can lock too", async () => {
   const { calls, ha } = fakeHa();
-  const doors = new Doors(testConfig({ doorHouse: "lock.front_door", doorApartment: "lock.apartment_door", apartmentUnlockOnly: true }), ha);
-  assert.equal(doors.unlocksOnly("apartment"), true);
-  assert.equal(doors.unlocksOnly("house"), false);
-  await doors.operate("apartment", "open");
+  const doors = new Doors(
+    testConfig({
+      doorHouse: "lock.front_door",
+      doorHouseMode: "open_and_lock",
+      doorApartment: "lock.apartment_door",
+      doorApartmentMode: "unlock_and_lock",
+    }),
+    ha,
+  );
+  assert.equal(doors.canLock("house"), true);
+  assert.equal(doors.allows("apartment", "unlock"), true);
+  assert.equal(doors.allows("apartment", "open"), false);
+  await doors.operate("apartment", "unlock");
   await doors.operate("house", "open");
+  await doors.operate("house", "lock");
   assert.deepEqual(
     calls.map((c) => c.url.replace("http://supervisor/core/api/services/", "")),
-    ["lock/unlock", "lock/open"],
+    ["lock/unlock", "lock/open", "lock/lock"],
   );
 });
 
@@ -81,7 +91,7 @@ test("switches, buttons and scripts are triggered for opening", async () => {
   );
 });
 
-test("only a lock or mock on the apartment door can lock", async () => {
+test("locking follows the mode and is refused for a switch", async () => {
   const { calls, ha } = fakeHa();
   assert.equal(doorsFor({ house: "lock.opener", apartment: "lock.tuer" }, ha).canLock("house"), false);
   assert.equal(doorsFor({ house: "mock", apartment: "lock.tuer" }, ha).canLock("apartment"), true);

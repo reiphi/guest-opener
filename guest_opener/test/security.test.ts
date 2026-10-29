@@ -77,7 +77,7 @@ test("host is notified about check-in, refused remote opening and locked PINs", 
   const stay = s.addStay();
   await s.loginGuest(stay);
   await s.door(stay.token, { door: "house", lat: HOME.lat + 0.1, lon: HOME.lon, accuracy: 20 });
-  assert.match(s.notifications.at(-1)!.message, /Erika Muster wollte die Haustür aus 11\.1 km/);
+  assert.match(s.notifications.at(-1)!.message, /Erika Muster wollte „Haustür“ aus 11\.1 km/);
   await s.door(stay.token, { door: "house", ...nearby });
   assert.match(s.notifications.at(-1)!.title, /Gast angekommen/);
   const count = s.notifications.length;

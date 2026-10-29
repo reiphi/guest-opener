@@ -24,8 +24,10 @@ for (const door of ["house", "apartment"] as const) {
 
 const server = serve({ fetch: createApp(cfg, store, doors, notifier).fetch, port: PORT, hostname: "0.0.0.0" }, () => {
   console.log(`Guest Opener listening on port ${PORT}`);
-  console.log(`  Haustür:     ${cfg.doorHouse}`);
-  console.log(`  Wohnungstür: ${cfg.doorApartment}`);
+  for (const door of ["house", "apartment"] as const) {
+    if (!doors.enabled(door)) continue;
+    console.log(`  ${doors.title(door)}: ${doors.entity(door)} (${cfg[door === "house" ? "doorHouseMode" : "doorApartmentMode"]})`);
+  }
   console.log(`  Benachrichtigungen: ${notifier.enabled ? cfg.notifyService : "aus"}`);
   if (cfg.geofenceRadiusM === 0) console.warn("  Standortprüfung ist AUS (geofence_radius_m = 0)");
 });

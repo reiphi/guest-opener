@@ -16,9 +16,9 @@ Gäste- und Verwaltungsseite sind fest dunkel. Deutsch und Englisch folgen der H
 
 1. Link öffnen und den PIN eingeben. Nach der sechsten Ziffer geht es weiter. Das Handy merkt sich
    die Anmeldung bis zur Abreise.
-2. Vor der Haustür auf **Haustür öffnen** tippen. Das Handy fragt einmal nach dem Standort.
-3. An der Wohnung auf **Wohnungstür öffnen** tippen.
-4. Beim Gehen die Tür zuziehen und auf **Wohnungstür zusperren** tippen. Das geht ohne Standort.
+2. An der Tür auf den passenden Knopf tippen. Die Knöpfe hängen an der Konfiguration: nur die
+   aktiven Türen, und je Tür Öffnen, Aufsperren und Zusperren. Öffnen und Aufsperren fragen nach
+   dem Standort. Zusperren nicht.
 
 ## Installation
 
@@ -38,7 +38,7 @@ Im Reiter **Konfiguration** mindestens diese Werte setzen, dann das Add-on neu s
 
 - `admin_password`, mindestens 12 Zeichen
 - `property_lat` und `property_lon`, die Koordinaten der Haustür
-- `door_house` und `door_apartment`, die Entitäten aus Home Assistant
+- mindestens eine Tür: `door_house` oder `door_apartment`
 
 | Option | Bedeutung |
 | --- | --- |
@@ -49,31 +49,33 @@ Im Reiter **Konfiguration** mindestens diese Werte setzen, dann das Add-on neu s
 | `geofence_radius_m` | So nah, in Metern, muss ein Gast sein, um zu öffnen. `0` schaltet die Prüfung ab. Standard: 250. |
 | `host_phone` | Nummer, die Gästen als Anruf-Schaltfläche angezeigt wird. |
 | `admin_password` | Passwort für `/admin`. Mindestens 12 Zeichen. Eine Änderung meldet alle Verwaltungen ab. |
-| `door_house` | Entität der Haustür, z. B. `switch.haustuer`. `mock` simuliert die Tür. |
-| `door_house_battery` | Optional. `sensor.*` in Prozent oder `binary_sensor.*` (`on` = schwach). |
-| `door_apartment` | Entität der Wohnungstür, z. B. `lock.wohnungstuer`. `mock` simuliert die Tür. |
-| `door_apartment_battery` | Optional, wie bei der Haustür. |
-| `door_apartment_unlock_only` | An, wenn die Wohnungstür außen eine Klinke hat. „Öffnen“ sperrt dann nur auf (`lock.unlock`), statt die Falle zu ziehen. |
+| `door_house`, `door_apartment` | `off` blendet die Tür aus. `mock` simuliert sie. Sonst die Entität, z. B. `switch.haustuer` oder `lock.wohnungstuer`. Mindestens eine Tür muss an sein. |
+| `door_house_name`, `door_apartment_name` | Bezeichnung auf den Knöpfen und in der Gästenachricht. Leer: `Haustür` bzw. `Wohnungstür`. |
+| `door_house_mode`, `door_apartment_mode` | `open` nur öffnen. `open_and_lock` Falle ziehen und zusperren. `unlock_and_lock` aufsperren und zusperren. Die letzten beiden brauchen `lock.*` oder `mock`. |
+| `door_house_battery`, `door_apartment_battery` | Optional. `sensor.*` in Prozent oder `binary_sensor.*` (`on` = schwach). |
 | `notify_service` | Optional. Dienst für Push-Nachrichten, z. B. `notify.mobile_app_mein_handy`. |
 
 `mock` löst keine echte Tür aus. Damit lässt sich die Verwaltung ausprobieren, bevor die Entitäten feststehen.
 
-Das Add-on startet nicht, wenn das Passwort kürzer als 12 Zeichen ist oder die Koordinaten fehlen,
-während die Standortprüfung an ist.
+Das Add-on startet nicht, wenn das Passwort kürzer als 12 Zeichen ist, die Koordinaten fehlen,
+während die Standortprüfung an ist, beide Türen auf `off` stehen, oder eine Betriebsart ein Schloss
+verlangt, die Entität aber keines ist.
 
 ### Entitäten
 
 Die Geräte zuerst in Home Assistant einbinden und dort einmal selbst auslösen. Dann die
 Entitäts-ID eintragen.
 
-| Domain | Öffnen | Zusperren |
-| --- | --- | --- |
-| `lock.*` | `lock.open`. Mit `door_apartment_unlock_only` stattdessen `lock.unlock`. | `lock.lock` |
-| `switch.*` | `switch.turn_on` | – |
-| `button.*` | `button.press` | – |
-| `script.*` | `script.turn_on` | – |
+| Domain | `open` | `unlock_and_lock` | `open_and_lock` |
+| --- | --- | --- | --- |
+| `lock.*` | `lock.open` | `lock.unlock` und `lock.lock` | `lock.open` und `lock.lock` |
+| `switch.*` | `switch.turn_on` | – | – |
+| `button.*` | `button.press` | – | – |
+| `script.*` | `script.turn_on` | – | – |
 
-**Wohnungstür zusperren** gibt es nur, wenn die Wohnungstür ein `lock.*` oder `mock` ist.
+`open_and_lock` und `unlock_and_lock` gibt es nur bei `lock.*` und bei `mock`.
+Wer bisher `door_apartment_unlock_only` an hatte und die neue Betriebsart noch nicht setzt, bleibt
+auf `unlock_and_lock`. Sobald `door_apartment_mode` gesetzt ist, gilt nur noch diese.
 Ein Schloss kommt je nach Gerät über Matter, die Integration des Herstellers oder MQTT in
 Home Assistant.
 

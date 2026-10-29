@@ -25,19 +25,28 @@ configuration:
     description: For /admin, at least 12 characters. Changing it signs out all admin sessions.
   door_house:
     name: Front door – entity
-    description: A lock.*, switch.*, button.* or script.* entity, e.g. switch.front_door. "mock" simulates the door.
+    description: "off" hides the door. "mock" simulates it. Otherwise a lock.*, switch.*, button.* or script.*, e.g. switch.front_door.
+  door_house_name:
+    name: Front door – label
+    description: Shown on the buttons and in the guest message. Empty keeps the default Haustür.
+  door_house_mode:
+    name: Front door – mode
+    description: open = open only. open_and_lock = unlatch and lock. unlock_and_lock = unlock and lock. The last two need a lock.* or mock.
   door_house_battery:
     name: Front door – battery sensor
     description: Optional, sensor.* in percent or binary_sensor.* (on = low).
   door_apartment:
     name: Apartment door – entity
-    description: Ideally a lock.*, which also enables "Lock". "mock" simulates the door.
+    description: "off" hides the door. "mock" simulates it. Otherwise a lock.*, switch.*, button.* or script.*, e.g. lock.apartment_door.
+  door_apartment_name:
+    name: Apartment door – label
+    description: Shown on the buttons and in the guest message. Empty keeps the default Wohnungstür.
+  door_apartment_mode:
+    name: Apartment door – mode
+    description: open = open only. open_and_lock = unlatch and lock. unlock_and_lock = unlock and lock. The last two need a lock.* or mock.
   door_apartment_battery:
     name: Apartment door – battery sensor
     description: Optional, sensor.* in percent or binary_sensor.* (on = low).
-  door_apartment_unlock_only:
-    name: Apartment door – unlock only
-    description: Enable if the apartment door has a handle on the outside. "Open" then only unlocks (lock.unlock) instead of pulling the latch (lock.open).
   notify_service:
     name: Notifications
     description: Optional, e.g. notify.mobile_app_your_phone. Reports guest arrival, remote opening attempts, locked PINs/logins and door failures.

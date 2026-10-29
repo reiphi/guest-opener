@@ -18,7 +18,7 @@ Die Bilder zeigen Beispieldaten aus einer lokalen Testumgebung.
 ## Funktionen
 
 - Link und sechsstelliger PIN, gültig nur zwischen Anreise und Abreise
-- Haustür öffnen, Wohnungstür öffnen und, bei einem Schloss, wieder zusperren
+- Zwei Türen, jede einzeln ausblendbar, mit eigenem Namen und eigener Betriebsart (öffnen, aufsperren, zusperren)
 - Standortprüfung mit einstellbarem Radius, abschaltbar
 - Deutsch und Englisch, festes dunkles Design
 - Verwaltung für Aufenthalte, dauerhafte Admin-Nutzer, Batteriewarnung und Protokoll

@@ -56,6 +56,24 @@ test("geofence radius 0 disables the location check", async () => {
   assert.equal((await s.door(stay.token, { door: "apartment" })).status, 200);
 });
 
+test("a disabled door is hidden and rejects actions", async () => {
+  const s = setup(testConfig({ doorHouse: "off", doorApartmentName: "Hoftor", doorApartmentMode: "unlock_and_lock" }));
+  const stay = s.addStay();
+  await s.loginGuest(stay);
+  const html = await (await s.request(`/g/${stay.token}`)).text();
+  assert.doesNotMatch(html, /data-door="house"/);
+  assert.match(html, /data-door="apartment" data-action="unlock"/);
+  assert.match(html, /Unlock Hoftor/);
+  assert.equal((await s.door(stay.token, { door: "house", ...nearby })).status, 400);
+  assert.equal((await s.door(stay.token, { door: "apartment", action: "unlock" })).status, 403);
+  assert.equal((await s.door(stay.token, { door: "apartment", action: "unlock", ...nearby })).status, 200);
+  await s.loginAdmin();
+  const admin = await (await s.request("/admin")).text();
+  assert.match(admin, /Hoftor aufsperren/);
+  assert.match(admin, /\/admin\/test\/apartment\/unlock/);
+  assert.doesNotMatch(admin, /\/admin\/test\/house\//);
+});
+
 test("locking skips the location check, the house door cannot lock", async () => {
   const s = setup();
   const stay = s.addStay();

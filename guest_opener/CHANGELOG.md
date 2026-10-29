@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+- Jede Tür kann aus sein (`off`), simuliert (`mock`) oder eine Home-Assistant-Entität.
+- Pro Tür eine Bezeichnung und eine Betriebsart: nur öffnen, Falle ziehen und zusperren,
+  oder aufsperren und zusperren.
+- Die Gästenachricht nennt die eingestellten Türen und Knöpfe.
+- `door_apartment_unlock_only` gilt nur noch, solange `door_apartment_mode` nicht gesetzt ist.
+
 ## 1.2.3
 
 - Dokumentation an den Aufbau eines Home-Assistant-Add-on-Repositories angepasst

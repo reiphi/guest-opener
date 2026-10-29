@@ -5,7 +5,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { adminJs, appCss, guestJs } from "./assets";
 import type { Config } from "./config";
 import { hmacBase64url, randomPin, randomToken, safeEqual } from "./crypto";
-import { isDoor } from "./doors";
+import { isDoor, isEntryAction } from "./doors";
 import type { Door, DoorAction, Doors } from "./doors";
 import { checkLocation } from "./geo";
 import { isLang, pickLang, texts } from "./i18n";
@@ -45,7 +45,10 @@ const ASSETS: Record<string, { body: string; type: string }> = {
   "admin.js": { body: adminJs, type: "text/javascript; charset=utf-8" },
 };
 
-const doorName: Record<Door, string> = { house: "Haustür", apartment: "Wohnungstür" };
+function parseDoorAction(value: unknown): DoorAction | null {
+  if (value === undefined) return "open";
+  return value === "open" || value === "unlock" || value === "lock" ? value : null;
+}
 
 /**
  * Address of the visitor, for the login lockout.
@@ -155,7 +158,7 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
     const stay = loadActiveStay(c, token);
     if (stay instanceof Response) return stay;
     if (await hasSession(c, stay)) {
-      return c.html(doorsPage(cfg, t, lang, stay, `/g/${token}/door`, doors.canLock("apartment")));
+      return c.html(doorsPage(cfg, t, lang, stay, `/g/${token}/door`));
     }
     return c.html(pinPage(cfg, t, lang, stay, `/g/${token}/pin`));
   });
@@ -208,21 +211,23 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
 
     const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
     const door = body.door;
-    const action: DoorAction = body.action === "lock" ? "lock" : "open";
-    if (!isDoor(door) || (action === "lock" && !doors.canLock(door))) {
+    const action = parseDoorAction(body.action);
+    if (!isDoor(door) || !action || !doors.allows(door, action)) {
       return c.json({ ok: false, message: t.doorError }, 400);
     }
+    const name = doors.title(door);
     const log = { door, action, guest_name: stay.guest_name, at: Date.now() };
+    const success =
+      action === "lock" ? t.lockedDoor(name) : action === "unlock" ? t.unlocked(name) : doors.buzzes(door) ? t.openedBuzzer(name) : t.openedLatch(name);
 
-    if (action === "lock") {
+    if (!isEntryAction(action)) {
       // Locking can't let anyone in, so it skips the location check: a guest who forgot to lock can do it from anywhere.
-      const result = await doors.operate(door, "lock");
+      const result = await doors.operate(door, action);
       store.logAccess({ ...log, success: result.ok, detail: result.detail, distance_m: null });
       if (!result.ok) return c.json({ ok: false, message: t.doorError }, 502);
-      return c.json({ ok: true, message: t.lockedApartment });
+      return c.json({ ok: true, message: success });
     }
 
-    const success = door === "house" ? t.openedHouse : doors.unlocksOnly(door) ? t.unlockedApartment : t.openedApartment;
     const loc = checkLocation(cfg, body.lat, body.lon, body.accuracy);
     const distance_m = loc.distance ?? null;
     if (!loc.ok) {
@@ -230,7 +235,7 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
       if (loc.reason === "too_far") {
         notifier.send(
           "Guest Opener: Öffnen abgelehnt",
-          `${stay.guest_name} wollte die ${doorName[door]} aus ${((distance_m ?? 0) / 1000).toFixed(1)} km Entfernung öffnen.`,
+          `${stay.guest_name} wollte „${name}“ aus ${((distance_m ?? 0) / 1000).toFixed(1)} km Entfernung öffnen.`,
         );
       }
       const message = loc.reason === "too_far" ? t.tooFar : loc.reason === "inaccurate" ? t.inaccurate : t.geoUnavailable;
@@ -241,18 +246,19 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
     const last = stay.last_open[door];
     if (last && Date.now() - last < DOOR_COOLDOWN_MS) return c.json({ ok: true, message: success });
 
-    const result = await doors.operate(door, "open");
+    const result = await doors.operate(door, action);
     store.logAccess({ ...log, success: result.ok, detail: result.detail, distance_m });
     if (!result.ok) {
-      notifier.send("Guest Opener: Tür reagiert nicht", `${doorName[door]} (${stay.guest_name}): ${result.detail}`);
+      notifier.send("Guest Opener: Tür reagiert nicht", `${name} (${stay.guest_name}): ${result.detail}`);
       return c.json({ ok: false, message: t.doorError }, 502);
     }
     const firstOpen = stay.role === "guest" && !stay.last_open.house && !stay.last_open.apartment;
     store.markOpened(stay.token, door, Date.now());
     if (firstOpen) {
+      const verb = action === "unlock" ? "aufgesperrt" : "geöffnet";
       notifier.send(
         "Guest Opener: Gast angekommen",
-        `${stay.guest_name} hat zum ersten Mal die ${doorName[door]} geöffnet${distance_m === null ? "" : ` (${distance_m} m entfernt)`}.`,
+        `${stay.guest_name} hat zum ersten Mal ${name} ${verb}${distance_m === null ? "" : ` (${distance_m} m entfernt)`}.`,
       );
     }
     return c.json({ ok: true, message: success });
@@ -321,17 +327,12 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
   const backToAdmin = (c: Context, msg: string) => c.redirect(`/admin?msg=${encodeURIComponent(msg)}`, 303);
 
   app.get("/admin", async (c) => {
-    const [house, apartment] = await Promise.all([doors.battery("house"), doors.battery("apartment")]);
+    const [house, apartment] = await Promise.all([
+      doors.enabled("house") ? doors.battery("house") : Promise.resolve(null),
+      doors.enabled("apartment") ? doors.battery("apartment") : Promise.resolve(null),
+    ]);
     return c.html(
-      adminPage(
-        cfg,
-        store.listStays("guest"),
-        store.listStays("admin"),
-        { house, apartment },
-        doors.canLock("apartment"),
-        publicOrigin(cfg, c),
-        c.req.query("msg"),
-      ),
+      adminPage(cfg, store.listStays("guest"), store.listStays("admin"), { house, apartment }, publicOrigin(cfg, c), c.req.query("msg")),
     );
   });
 
@@ -390,8 +391,8 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
 
   app.post("/admin/test/:door/:action", async (c) => {
     const door = c.req.param("door");
-    const action: DoorAction = c.req.param("action") === "lock" ? "lock" : "open";
-    if (!isDoor(door)) return backToAdmin(c, "Unbekannte Tür.");
+    const action = parseDoorAction(c.req.param("action"));
+    if (!isDoor(door) || !action || !doors.allows(door, action)) return backToAdmin(c, "Diese Türaktion ist nicht eingestellt.");
     const result = await doors.operate(door, action);
     store.logAccess({
       at: Date.now(),

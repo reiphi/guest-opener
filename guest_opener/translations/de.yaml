@@ -25,19 +25,28 @@ configuration:
     description: Für /admin, mindestens 12 Zeichen. Eine Änderung meldet alle Admin-Sitzungen ab.
   door_house:
     name: Haustür – Entität
-    description: lock.*, switch.*, button.* oder script.* aus Home Assistant, z. B. switch.haustuer. „mock“ simuliert die Tür.
+    description: „off“ blendet die Tür aus. „mock“ simuliert sie. Sonst lock.*, switch.*, button.* oder script.*, z. B. switch.haustuer.
+  door_house_name:
+    name: Haustür – Bezeichnung
+    description: Steht auf den Knöpfen und in der Gästenachricht. Leer = Haustür.
+  door_house_mode:
+    name: Haustür – Betriebsart
+    description: open = nur öffnen. open_and_lock = Falle ziehen und zusperren. unlock_and_lock = aufsperren und zusperren. Die letzten beiden nur bei lock.* oder mock.
   door_house_battery:
     name: Haustür – Batterie-Sensor
     description: Optional, sensor.* in Prozent oder binary_sensor.* (an = schwach).
   door_apartment:
     name: Wohnungstür – Entität
-    description: Am besten ein lock.*, dann gibt es auch „Zusperren“. „mock“ simuliert die Tür.
+    description: „off“ blendet die Tür aus. „mock“ simuliert sie. Sonst lock.*, switch.*, button.* oder script.*, z. B. lock.wohnungstuer.
+  door_apartment_name:
+    name: Wohnungstür – Bezeichnung
+    description: Steht auf den Knöpfen und in der Gästenachricht. Leer = Wohnungstür.
+  door_apartment_mode:
+    name: Wohnungstür – Betriebsart
+    description: open = nur öffnen. open_and_lock = Falle ziehen und zusperren. unlock_and_lock = aufsperren und zusperren. Die letzten beiden nur bei lock.* oder mock.
   door_apartment_battery:
     name: Wohnungstür – Batterie-Sensor
     description: Optional, sensor.* in Prozent oder binary_sensor.* (an = schwach).
-  door_apartment_unlock_only:
-    name: Wohnungstür – nur aufsperren
-    description: An, wenn die Wohnungstür außen eine Klinke hat. „Öffnen“ sperrt dann nur auf (lock.unlock), statt die Falle zu ziehen (lock.open).
   notify_service:
     name: Benachrichtigungen
     description: Optional, z. B. notify.mobile_app_dein_handy. Meldet Ankunft von Gästen, Öffnungsversuche aus der Ferne, gesperrte PINs/Logins und Türfehler.

@@ -1,7 +1,7 @@
 import { ASSET_VERSION } from "./assets";
 import type { Config } from "./config";
-import { DOORS, isLow } from "./doors";
-import type { BatteryStatus, Door } from "./doors";
+import { DOORS, doorActions, doorBuzzes, doorEnabled, doorTitle, isLow } from "./doors";
+import type { BatteryStatus, Door, DoorAction } from "./doors";
 import { geofenceEnabled } from "./geo";
 import type { Lang, Texts } from "./i18n";
 import type { LogEntry, Stay } from "./store";
@@ -94,7 +94,7 @@ ${helpLink(cfg, t)}
   });
 }
 
-function doorButton(door: Door, action: "open" | "lock", icon: string, label: string, sub: string): string {
+function doorButton(door: Door, action: DoorAction, icon: string, label: string, sub: string): string {
   const cls = action === "lock" ? "lock" : door;
   return `<button class="door ${cls}" data-door="${door}" data-action="${action}">
   <span class="door-icon" aria-hidden="true">${icon}</span>
@@ -103,11 +103,26 @@ function doorButton(door: Door, action: "open" | "lock", icon: string, label: st
 </button>`;
 }
 
-export function doorsPage(cfg: Config, t: Texts, lang: Lang, stay: Stay, doorUrl: string, canLock: boolean): string {
+function guestDoorButtons(cfg: Config, t: Texts): string {
+  const iconFor = (door: Door, action: DoorAction) => (action === "lock" ? "🔒" : door === "house" ? "🏠" : "🚪");
+  return DOORS.flatMap((door) =>
+    doorActions(cfg, door).map((action) => {
+      const name = doorTitle(cfg, door);
+      if (action === "lock") return doorButton(door, action, iconFor(door, action), t.lock(name), t.lockSub);
+      if (action === "unlock") return doorButton(door, action, iconFor(door, action), t.unlock(name), t.unlockSub);
+      const sub = doorBuzzes(cfg, door) ? t.openBuzzerSub : t.openLatchSub;
+      return doorButton(door, action, iconFor(door, action), t.open(name), sub);
+    }),
+  ).join("\n  ");
+}
+
+export function doorsPage(cfg: Config, t: Texts, lang: Lang, stay: Stay, doorUrl: string): string {
   const geofence = geofenceEnabled(cfg);
+  const canLock = DOORS.some((door) => doorActions(cfg, door).includes("lock"));
   const strings = {
     locating: t.locating,
     opening: t.opening,
+    unlocking: t.unlocking,
     locking: t.locking,
     geoDenied: t.geoDenied,
     geoUnavailable: t.geoUnavailable,
@@ -130,9 +145,7 @@ ${brand(cfg)}
 <h1>${esc(t.welcome(stay.guest_name))}</h1>
 <p class="chip">${esc(validity)}</p>
 <div class="doors">
-  ${doorButton("house", "open", "🏠", t.openHouse, t.openHouseSub)}
-  ${doorButton("apartment", "open", "🚪", t.openApartment, t.openApartmentSub)}
-  ${canLock ? doorButton("apartment", "lock", "🔒", t.lockApartment, t.lockApartmentSub) : ""}
+  ${guestDoorButtons(cfg, t)}
 </div>
 <div id="status" class="status" role="status" aria-live="polite" hidden></div>
 <ul class="steps">
@@ -147,7 +160,33 @@ ${helpLink(cfg, t)}
 // ---------------------------------------------------------------- admin
 
 const statusLabel = { active: "aktiv", upcoming: "kommend", expired: "abgelaufen", revoked: "widerrufen" } as const;
-const doorLabel: Record<string, string> = { house: "Haustür", apartment: "Wohnungstür" };
+const actionLabel = { open: "öffnen", unlock: "aufsperren", lock: "zusperren" } as const;
+
+/** Instructions follow the configured doors, so the copied message matches the buttons. */
+function guestInstructions(cfg: Config, lang: Lang): string {
+  const lines = DOORS.filter((door) => doorEnabled(cfg, door)).map((door) => {
+    const name = doorTitle(cfg, door);
+    const actions = doorActions(cfg, door);
+    if (lang === "en") {
+      if (actions.includes("unlock")) return `${name}: tap “Unlock ${name}”, then press the handle. When leaving, tap “Lock ${name}”.`;
+      if (actions.includes("lock")) return `${name}: tap “Open ${name}”. When leaving, pull the door shut and tap “Lock ${name}”.`;
+      if (doorBuzzes(cfg, door)) return `${name}: tap “Open ${name}”, then push the door.`;
+      return `${name}: tap “Open ${name}”.`;
+    }
+    if (actions.includes("unlock")) return `${name}: auf „${name} aufsperren“ tippen und die Klinke drücken. Beim Gehen auf „${name} zusperren“ tippen.`;
+    if (actions.includes("lock")) return `${name}: auf „${name} öffnen“ tippen. Beim Gehen zuziehen und auf „${name} zusperren“ tippen.`;
+    if (doorBuzzes(cfg, door)) return `${name}: auf „${name} öffnen“ tippen und die Tür aufdrücken.`;
+    return `${name}: auf „${name} öffnen“ tippen.`;
+  });
+  const intro = lang === "en" ? "Open the link and enter the PIN." : "Öffne den Link und gib den PIN ein.";
+  const geo =
+    cfg.geofenceRadiusM > 0
+      ? lang === "en"
+        ? " Please allow location access when your phone asks."
+        : " Bitte erlaube den Standortzugriff, wenn dein Handy fragt."
+      : "";
+  return `${intro} ${lines.join(" ")}${geo}`;
+}
 
 export function guestMessageText(cfg: Config, stay: Stay, link: string, lang: Lang = "de"): string {
   const tz = cfg.timezone;
@@ -162,7 +201,7 @@ export function guestMessageText(cfg: Config, stay: Stay, link: string, lang: La
       `PIN: ${stay.pin}`,
       ``,
       stay.role === "admin" ? `This access does not expire.` : `Valid from ${fmt(stay.valid_from)} until ${fmt(stay.valid_until)}.`,
-      `Open the link at the front door, enter the PIN and tap “Open front door”. At the apartment, tap “Open apartment door”. Please allow location access when your phone asks.`,
+      guestInstructions(cfg, "en"),
       ...(phone ? [``, `If anything goes wrong: ${phone}`] : []),
     ].join("\n");
   }
@@ -175,7 +214,7 @@ export function guestMessageText(cfg: Config, stay: Stay, link: string, lang: La
     `PIN: ${stay.pin}`,
     ``,
     stay.role === "admin" ? `Der Zugang ist unbegrenzt gültig.` : `Gültig von ${fmt(stay.valid_from)} bis ${fmt(stay.valid_until)}.`,
-    `Öffne den Link vor der Haustür, gib den PIN ein und tippe auf „Haustür öffnen“. An der Wohnung dann auf „Wohnungstür öffnen“. Bitte erlaube den Standortzugriff, wenn dein Handy fragt.`,
+    guestInstructions(cfg, "de"),
     ...(phone ? [``, `Bei Problemen: ${phone}`] : []),
   ].join("\n");
 }
@@ -248,19 +287,25 @@ function batteryBadge(status: BatteryStatus | null): string {
   return isLow(status) ? `<span class="badge bad">🪫 ${value}</span>` : `<span class="badge good">🔋 ${value}</span>`;
 }
 
-function deviceCard(cfg: Config, door: Door, battery: BatteryStatus | null, canLock: boolean): string {
+function deviceCard(cfg: Config, door: Door, battery: BatteryStatus | null): string {
   const entity = door === "house" ? cfg.doorHouse : cfg.doorApartment;
-  const label = doorLabel[door];
+  const label = doorTitle(cfg, door);
   const error = battery && !battery.ok ? `<p class="small muted">${esc(battery.error)}</p>` : "";
+  const tests = doorActions(cfg, door)
+    .map((action) => {
+      const text = action === "lock" ? "Zusperren" : action === "unlock" ? "Aufsperren" : "Öffnen";
+      const confirm = action === "lock" ? undefined : `${label} jetzt wirklich ${text.toLowerCase()}?`;
+      return postButton(`/admin/test/${door}/${action}`, text, { cls: "btn sm", confirm });
+    })
+    .join("");
   return `<div class="card">
   <div class="device-head">
-    <div><h2>${door === "house" ? "🏠" : "🚪"} ${label}</h2><div class="entity">${esc(entity)}</div></div>
+    <div><h2>${door === "house" ? "🏠" : "🚪"} ${esc(label)}</h2><div class="entity">${esc(entity)}</div></div>
     ${batteryBadge(battery)}
   </div>
   ${error}
   <div class="row-actions">
-    ${postButton(`/admin/test/${door}/open`, "Öffnen", { cls: "btn sm", confirm: `${label} jetzt wirklich öffnen?` })}
-    ${canLock ? postButton(`/admin/test/${door}/lock`, "Zusperren", { cls: "btn sm" }) : ""}
+    ${tests}
   </div>
 </div>`;
 }
@@ -270,7 +315,6 @@ export function adminPage(
   guests: Stay[],
   admins: Stay[],
   batteries: Record<Door, BatteryStatus | null>,
-  canLock: boolean,
   origin: string,
   flash?: string,
 ): string {
@@ -279,10 +323,11 @@ export function adminPage(
   const current = guests.filter((s) => s.valid_until > now).sort((a, b) => a.valid_from - b.valid_from);
   const past = guests.filter((s) => s.valid_until <= now);
   const item = (s: Stay) => accessItem(cfg, s, origin, now);
-  const lowDoors = DOORS.filter((d) => {
+  const enabled = DOORS.filter((d) => doorEnabled(cfg, d));
+  const lowDoors = enabled.filter((d) => {
     const status = batteries[d];
     return status && isLow(status);
-  }).map((d) => doorLabel[d]);
+  }).map((d) => doorTitle(cfg, d));
 
   const defaultFrom = epochToLocalInput(localTimeOnDay(0, 15, tz), tz);
   const defaultUntil = epochToLocalInput(localTimeOnDay(3, 11, tz), tz);
@@ -294,8 +339,7 @@ export function adminPage(
     `${flash ? `<p class="notice ok" role="status">${esc(flash)}</p>` : ""}
 ${lowDoors.length ? `<p class="notice err">🪫 Batterie schwach: ${esc(lowDoors.join(", "))}. Bitte vor der nächsten Anreise tauschen oder laden.</p>` : ""}
 <section class="devices" aria-label="Geräte">
-  ${deviceCard(cfg, "house", batteries.house, false)}
-  ${deviceCard(cfg, "apartment", batteries.apartment, canLock)}
+  ${enabled.map((door) => deviceCard(cfg, door, batteries[door])).join("\n  ")}
 </section>
 
 <form class="card" method="post" action="/admin/stays">
@@ -358,8 +402,8 @@ export function logPage(cfg: Config, entries: LogEntry[]): string {
       (e) => `<tr>
   <td>${esc(formatDateTime(e.at, tz, "de-DE"))}</td>
   <td>${esc(e.guest_name ?? "Admin-Test")}</td>
-  <td>${esc(doorLabel[e.door] ?? e.door)}</td>
-  <td>${e.action === "lock" ? "zusperren" : "öffnen"}</td>
+  <td>${esc(doorTitle(cfg, e.door))}</td>
+  <td>${actionLabel[e.action]}</td>
   <td>${e.success ? `<span class="badge good">ok</span>` : `<span class="badge bad">abgelehnt</span>`}</td>
   <td>${e.distance_m === null ? "–" : `${e.distance_m.toLocaleString("de-DE")} m`}</td>
   <td class="detail">${esc(e.detail)}</td>

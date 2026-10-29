@@ -201,7 +201,8 @@ export const guestJs = `
             return;
           }
         }
-        show(locking ? CFG.strings.locking : CFG.strings.opening, "info");
+        const progress = body.action === "lock" ? CFG.strings.locking : body.action === "unlock" ? CFG.strings.unlocking : CFG.strings.opening;
+        show(progress, "info");
         let res;
         try {
           res = await fetch(CFG.doorUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
