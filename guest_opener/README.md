@@ -6,4 +6,4 @@ damit vor Ort Haustür und Wohnungstür vom Handy aus. Nach der Abreise gilt der
 Die Türen sind beliebige Home-Assistant-Entitäten. Guest Opener kennt keine Hersteller.
 
 Die vollständige Anleitung steht im Reiter **Dokumentation** dieses Add-ons und in
-[`DOCS.md`](DOCS.md).
+[`DOCS.md`](DOCS.md). English: [DOCS.en.md](https://github.com/reiphi/guest-opener/blob/main/guest_opener/DOCS.en.md).

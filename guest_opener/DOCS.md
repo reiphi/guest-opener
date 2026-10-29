@@ -1,5 +1,7 @@
 # Guest Opener
 
+English: [DOCS.en.md](https://github.com/reiphi/guest-opener/blob/main/guest_opener/DOCS.en.md)
+
 Zeitlich begrenzter Zugang für Gäste. Jede Person bekommt einen Link und einen sechsstelligen PIN.
 Damit öffnet sie vor Ort die Haustür und die Wohnungstür vom Handy aus. Nach der Abreise gilt der
 Zugang nicht mehr.
@@ -193,10 +195,21 @@ Ersatzschlüssel bleibt der Notfallweg. Den Code nur im Notfall weitergeben.
 
 Nach einem Update von Home Assistant oder diesem Add-on einmal die Testknöpfe drücken.
 
+## Haftung
+
+Guest Opener schaltet physische Türen. Ob eine Tür aufgeht, hängt vom Schloss, von Home Assistant
+und vom Netz ab. Die Standortprüfung hält niemanden auf, der Link und PIN hat und die Anfrage
+selbst baut.
+
+Du entscheidest, wer einen Link bekommt, wie der Zugang von außen abgesichert ist, und was geht,
+wenn Strom oder Internet ausfallen. Ein Schlüsselsafe mit Ersatzschlüssel bleibt der Notfallweg.
+
+Die Software steht unter der [MIT-Lizenz](https://github.com/reiphi/guest-opener/blob/main/LICENSE)
+und wird ohne Gewährleistung bereitgestellt. Der Lizenztext schließt die Haftung aus, soweit das
+gesetzlich zulässig ist.
+
 ## Entwicklung und Lizenz
 
 Quelltext, Tests und der Start auf dem eigenen Rechner stehen in der
 [README des Repositorys](https://github.com/reiphi/guest-opener).
 Fehler und Wünsche gehören in die Issues dort.
-
-Guest Opener ist unter der MIT-Lizenz veröffentlicht.

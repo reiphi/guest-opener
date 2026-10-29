@@ -1,5 +1,7 @@
 # Guest Opener
 
+English: [README](README.en.md) · [Documentation](guest_opener/DOCS.en.md)
+
 Zeitlich begrenzter Zugang für Gäste, als [Home-Assistant-Add-on](https://www.home-assistant.io/docs/apps/).
 Jede Person bekommt einen Link und einen PIN und öffnet damit vor Ort Haustür und Wohnungstür vom
 Handy aus. Nach der Abreise gilt der Zugang nicht mehr.
@@ -55,7 +57,8 @@ guest_opener/
   config.yaml         Optionen, Architektur, Zugriff auf die Home-Assistant-API
   Dockerfile          baut ein einzelnes JS-Bundle und packt es in node:24-alpine
   README.md           Kurztext für den Add-on-Store
-  DOCS.md             Anleitung im Reiter Dokumentation
+  DOCS.md             Anleitung im Reiter Dokumentation, auf Deutsch
+  DOCS.en.md          dieselbe Anleitung auf Englisch
   CHANGELOG.md        Änderungen je Version
   translations/       Beschriftung der Optionen, Deutsch und Englisch
   src/                Server, Routen, Türen, SQLite, Seiten

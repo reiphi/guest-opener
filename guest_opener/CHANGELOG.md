@@ -4,6 +4,9 @@
 
 - Dokumentation an den Aufbau eines Home-Assistant-Add-on-Repositories angepasst
   (`README.md`, `DOCS.md`, `CHANGELOG.md` im Add-on-Ordner).
+- Dieselbe Anleitung auf Englisch (`DOCS.en.md`). Home Assistant zeigt im Add-on nur die deutsche
+  Datei an.
+- Hinweis zur Haftung, mit Verweis auf die MIT-Lizenz.
 - Keine Änderung am Verhalten.
 
 ## 1.2.2
