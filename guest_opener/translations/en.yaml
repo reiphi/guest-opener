@@ -1,0 +1,45 @@
+configuration:
+  property_name:
+    name: Property name
+    description: Shown as the heading on the guest and admin pages.
+  public_url:
+    name: Public URL
+    description: e.g. https://door.example.com – used in guest links. Empty = the address the admin page was opened with.
+  timezone:
+    name: Time zone
+    description: For check-in and check-out times, e.g. Europe/Berlin.
+  property_lat:
+    name: Latitude of the property
+    description: e.g. 47.12345
+  property_lon:
+    name: Longitude of the property
+    description: e.g. 11.12345
+  geofence_radius_m:
+    name: Location check radius (m)
+    description: Guests must be this close to open a door. 0 disables the check.
+  host_phone:
+    name: Emergency phone number
+    description: Shown to guests as "Problems? Call us".
+  admin_password:
+    name: Admin password
+    description: For /admin, at least 12 characters. Changing it signs out all admin sessions.
+  door_house:
+    name: Front door – entity
+    description: A lock.*, switch.*, button.* or script.* entity, e.g. switch.front_door. "mock" simulates the door.
+  door_house_battery:
+    name: Front door – battery sensor
+    description: Optional, sensor.* in percent or binary_sensor.* (on = low).
+  door_apartment:
+    name: Apartment door – entity
+    description: Ideally a lock.*, which also enables "Lock". "mock" simulates the door.
+  door_apartment_battery:
+    name: Apartment door – battery sensor
+    description: Optional, sensor.* in percent or binary_sensor.* (on = low).
+  door_apartment_unlock_only:
+    name: Apartment door – unlock only
+    description: Enable if the apartment door has a handle on the outside. "Open" then only unlocks (lock.unlock) instead of pulling the latch (lock.open).
+  notify_service:
+    name: Notifications
+    description: Optional, e.g. notify.mobile_app_your_phone. Reports guest arrival, remote opening attempts, locked PINs/logins and door failures.
+network:
+  8787/tcp: Only for testing on the local network. Guests connect through the reverse proxy (port 443).

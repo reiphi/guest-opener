@@ -1,0 +1,41 @@
+name: Guest Opener
+version: "1.2.3"
+slug: guest_opener
+description: Digitaler Gästeschlüssel – Link + PIN öffnet Haus- und Wohnungstür über Home-Assistant-Geräte
+url: https://github.com/reiphi/guest-opener
+arch:
+  - aarch64
+  - amd64
+startup: application
+boot: auto
+homeassistant_api: true
+# Only needed to test from the LAN. Guests reach the add-on through the reverse proxy, not through this port.
+ports:
+  8787/tcp: null
+ports_description:
+  8787/tcp: Webseite (nur zum Testen im Heimnetz, normalerweise leer lassen)
+options:
+  property_name: Ferienwohnung
+  timezone: Europe/Berlin
+  property_lat: 0
+  property_lon: 0
+  geofence_radius_m: 250
+  admin_password: ""
+  door_house: mock
+  door_apartment: mock
+  door_apartment_unlock_only: false
+schema:
+  property_name: str
+  public_url: url?
+  timezone: str
+  property_lat: float(-90,90)
+  property_lon: float(-180,180)
+  geofence_radius_m: int(0,5000)
+  host_phone: str?
+  admin_password: password
+  door_house: str
+  door_house_battery: str?
+  door_apartment: str
+  door_apartment_battery: str?
+  door_apartment_unlock_only: bool
+  notify_service: str?

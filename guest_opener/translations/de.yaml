@@ -1,0 +1,45 @@
+configuration:
+  property_name:
+    name: Name der Unterkunft
+    description: Erscheint als Überschrift auf der Gäste- und Admin-Seite.
+  public_url:
+    name: Öffentliche Adresse
+    description: z. B. https://tuer.example.de – wird in die Gäste-Links eingesetzt. Leer = Adresse, über die die Admin-Seite aufgerufen wurde.
+  timezone:
+    name: Zeitzone
+    description: Für An- und Abreisezeiten, z. B. Europe/Berlin.
+  property_lat:
+    name: Breitengrad der Wohnung
+    description: z. B. 47.12345 (in Google Maps Rechtsklick auf das Haus).
+  property_lon:
+    name: Längengrad der Wohnung
+    description: z. B. 11.12345
+  geofence_radius_m:
+    name: Radius der Standortprüfung (m)
+    description: Gäste müssen so nah am Haus sein, um eine Tür zu öffnen. 0 schaltet die Prüfung ab.
+  host_phone:
+    name: Telefonnummer für Notfälle
+    description: Wird den Gästen als „Probleme? Ruf uns an“ angezeigt.
+  admin_password:
+    name: Admin-Passwort
+    description: Für /admin, mindestens 12 Zeichen. Eine Änderung meldet alle Admin-Sitzungen ab.
+  door_house:
+    name: Haustür – Entität
+    description: lock.*, switch.*, button.* oder script.* aus Home Assistant, z. B. switch.haustuer. „mock“ simuliert die Tür.
+  door_house_battery:
+    name: Haustür – Batterie-Sensor
+    description: Optional, sensor.* in Prozent oder binary_sensor.* (an = schwach).
+  door_apartment:
+    name: Wohnungstür – Entität
+    description: Am besten ein lock.*, dann gibt es auch „Zusperren“. „mock“ simuliert die Tür.
+  door_apartment_battery:
+    name: Wohnungstür – Batterie-Sensor
+    description: Optional, sensor.* in Prozent oder binary_sensor.* (an = schwach).
+  door_apartment_unlock_only:
+    name: Wohnungstür – nur aufsperren
+    description: An, wenn die Wohnungstür außen eine Klinke hat. „Öffnen“ sperrt dann nur auf (lock.unlock), statt die Falle zu ziehen (lock.open).
+  notify_service:
+    name: Benachrichtigungen
+    description: Optional, z. B. notify.mobile_app_dein_handy. Meldet Ankunft von Gästen, Öffnungsversuche aus der Ferne, gesperrte PINs/Logins und Türfehler.
+network:
+  8787/tcp: Nur zum Testen im Heimnetz. Für Gäste läuft der Zugriff über den Reverse Proxy (Port 443).
