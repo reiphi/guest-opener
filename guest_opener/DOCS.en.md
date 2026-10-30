@@ -74,8 +74,6 @@ Add the devices to Home Assistant first and trigger them there once. Then enter 
 | `script.*` | `script.turn_on` | – | – |
 
 `open_and_lock` and `unlock_and_lock` work only with a `lock.*` or `mock`.
-An existing `door_apartment_unlock_only: true` still selects `unlock_and_lock` until
-`door_apartment_mode` is set. After that, only the mode applies.
 A lock reaches Home Assistant through Matter, the manufacturer's integration, or MQTT.
 
 Battery: a `sensor.*` with a percentage, or a `binary_sensor.*` where `on` means low. The admin

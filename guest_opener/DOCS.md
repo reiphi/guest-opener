@@ -74,8 +74,6 @@ Entitäts-ID eintragen.
 | `script.*` | `script.turn_on` | – | – |
 
 `open_and_lock` und `unlock_and_lock` gibt es nur bei `lock.*` und bei `mock`.
-Wer bisher `door_apartment_unlock_only` an hatte und die neue Betriebsart noch nicht setzt, bleibt
-auf `unlock_and_lock`. Sobald `door_apartment_mode` gesetzt ist, gilt nur noch diese.
 Ein Schloss kommt je nach Gerät über Matter, die Integration des Herstellers oder MQTT in
 Home Assistant.
 

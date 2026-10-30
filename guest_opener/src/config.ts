@@ -52,8 +52,6 @@ type Options = {
   door_apartment_name?: string;
   door_apartment_mode?: string;
   door_apartment_battery?: string;
-  /** Previous option. Used only when door_apartment_mode is absent. */
-  door_apartment_unlock_only?: boolean;
   notify_service?: string;
 };
 
@@ -78,7 +76,6 @@ function optionsFromEnv(env: NodeJS.ProcessEnv): Options {
     door_apartment_name: env.DOOR_APARTMENT_NAME,
     door_apartment_mode: env.DOOR_APARTMENT_MODE,
     door_apartment_battery: env.DOOR_APARTMENT_BATTERY,
-    door_apartment_unlock_only: env.DOOR_APARTMENT_UNLOCK_ONLY === "true",
     notify_service: env.NOTIFY_SERVICE,
   };
 }
@@ -131,8 +128,7 @@ export function buildConfig(
     return fallback;
   };
   const doorHouseMode = mode("door_house_mode", o.door_house_mode, "open");
-  const apartmentFallback: DoorMode = o.door_apartment_unlock_only === true ? "unlock_and_lock" : "open_and_lock";
-  const doorApartmentMode = mode("door_apartment_mode", o.door_apartment_mode, apartmentFallback);
+  const doorApartmentMode = mode("door_apartment_mode", o.door_apartment_mode, "open_and_lock");
   const checkMode = (key: string, target: string, selected: DoorMode) => {
     if (target === "off" || target === "mock" || target.startsWith("lock.")) return;
     if (selected !== "open") errors.push(`${key} ${selected} needs a lock.* entity or mock (got "${target}")`);

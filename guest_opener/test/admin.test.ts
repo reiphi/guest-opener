@@ -111,14 +111,9 @@ test("invalid configuration fails loudly", () => {
       ),
     /door_house_mode/,
   );
-  const legacy = buildConfig({ admin_password: PASSWORD, geofence_radius_m: 0, door_apartment_unlock_only: true }, runtime);
-  assert.equal(legacy.doorApartmentMode, "unlock_and_lock");
-  assert.equal(legacy.doorHouseMode, "open");
-  const chosen = buildConfig(
-    { admin_password: PASSWORD, geofence_radius_m: 0, door_apartment_unlock_only: true, door_apartment_mode: "open" },
-    runtime,
-  );
-  assert.equal(chosen.doorApartmentMode, "open");
+  const defaults = buildConfig({ admin_password: PASSWORD, geofence_radius_m: 0 }, runtime);
+  assert.equal(defaults.doorHouseMode, "open");
+  assert.equal(defaults.doorApartmentMode, "open_and_lock");
   const named = buildConfig({ admin_password: PASSWORD, geofence_radius_m: 0, door_house: "off", door_apartment_name: "Hoftor" }, runtime);
   assert.equal(named.doorHouse, "off");
   assert.equal(named.doorApartmentName, "Hoftor");

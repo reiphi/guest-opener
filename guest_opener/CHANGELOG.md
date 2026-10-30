@@ -6,7 +6,6 @@
 - Pro Tür eine Bezeichnung und eine Betriebsart: nur öffnen, Falle ziehen und zusperren,
   oder aufsperren und zusperren.
 - Die Gästenachricht nennt die eingestellten Türen und Knöpfe.
-- `door_apartment_unlock_only` gilt nur noch, solange `door_apartment_mode` nicht gesetzt ist.
 
 ## 1.2.3
 
@@ -28,7 +27,7 @@
 
 ## 1.2.0
 
-- Option `door_apartment_unlock_only`: Wohnungstür nur aufsperren, statt die Falle zu ziehen.
+- Wohnungstür kann nur aufsperren, statt die Falle zu ziehen.
 - Gästenachricht ohne Stockwerksangabe.
 
 ## 1.1.0
