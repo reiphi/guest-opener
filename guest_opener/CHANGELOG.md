@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.2
+
+- Sicherheitsupdate: `hono` 4.13.19 und `@hono/node-server` 2.1.9. Behoben sind unter anderem ein
+  Backslash im Pfad, mit dem sich eine `/admin`-Sperre am Reverse Proxy umgehen ließ
+  (GHSA-jpvv-r467-5p4w), und Wildcard-Middleware, die der Router überspringen konnte
+  (GHSA-h7mg-cq63-vhpq).
+
 ## 1.3.1
 
 - Eine ungültige Zeitzone verhindert den Start mit einer klaren Meldung. Bisher startete das
