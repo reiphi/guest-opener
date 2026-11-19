@@ -8,7 +8,8 @@ export type Role = "guest" | "admin";
 /** Admin users never expire; 9999-12-31 keeps `valid_until` a plain number and comparisons trivial. */
 export const PERMANENT_UNTIL = Date.UTC(9999, 11, 31, 23, 59, 59);
 
-const LOG_RETENTION_MS = 365 * 86_400_000;
+/** Log entries, and guest stays counted from departure, are deleted after this time. */
+export const RETENTION_MS = 365 * 86_400_000;
 
 export type Stay = {
   token: string;
@@ -98,6 +99,13 @@ export class Store {
     this.db = new DatabaseSync(path);
     this.db.exec("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;");
     this.db.exec(SCHEMA);
+    this.prune();
+  }
+
+  /** Removes log entries and guest stays past the retention period. Admin users never expire, so they stay. */
+  prune(now = Date.now()) {
+    this.db.prepare("DELETE FROM access_log WHERE at < ?").run(now - RETENTION_MS);
+    this.db.prepare("DELETE FROM stays WHERE role = 'guest' AND valid_until < ?").run(now - RETENTION_MS);
   }
 
   close() {
@@ -123,23 +131,28 @@ export class Store {
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(s.token, s.role, s.guest_name, s.pin, s.valid_from, s.valid_until, Date.now());
+    this.prune();
   }
 
-  setRevoked(token: string, revoked: boolean) {
-    this.db.prepare("UPDATE stays SET revoked = ? WHERE token = ?").run(revoked ? 1 : 0, token);
+  /** The methods below return false if no stay has this token. */
+  setRevoked(token: string, revoked: boolean): boolean {
+    return this.db.prepare("UPDATE stays SET revoked = ? WHERE token = ?").run(revoked ? 1 : 0, token).changes > 0;
   }
 
-  deleteStay(token: string) {
-    this.db.prepare("DELETE FROM stays WHERE token = ?").run(token);
+  deleteStay(token: string): boolean {
+    return this.db.prepare("DELETE FROM stays WHERE token = ?").run(token).changes > 0;
   }
 
   /** Also clears failed attempts and any PIN lock. */
-  setPin(token: string, pin: string) {
-    this.db.prepare("UPDATE stays SET pin = ?, failed_attempts = 0, locked_until = NULL WHERE token = ?").run(pin, token);
+  setPin(token: string, pin: string): boolean {
+    return (
+      this.db.prepare("UPDATE stays SET pin = ?, failed_attempts = 0, locked_until = NULL WHERE token = ?").run(pin, token)
+        .changes > 0
+    );
   }
 
-  resetAttempts(token: string) {
-    this.db.prepare("UPDATE stays SET failed_attempts = 0, locked_until = NULL WHERE token = ?").run(token);
+  resetAttempts(token: string): boolean {
+    return this.db.prepare("UPDATE stays SET failed_attempts = 0, locked_until = NULL WHERE token = ?").run(token).changes > 0;
   }
 
   /** Increments the counter; once it reaches `maxAttempts` the stay is locked and the counter restarts. */
@@ -154,7 +167,20 @@ export class Store {
     return { attempts, lockedUntil };
   }
 
-  markOpened(token: string, door: Door, at: number) {
+  /**
+   * Records an opening at `at` unless the door was opened within `cooldownMs`. Returns false during the cooldown.
+   * Claiming before the door is triggered keeps two parallel requests from both triggering it.
+   */
+  claimOpen(token: string, door: Door, at: number, cooldownMs: number): boolean {
+    const column = door === "house" ? "last_open_house" : "last_open_apartment";
+    const result = this.db
+      .prepare(`UPDATE stays SET ${column} = ? WHERE token = ? AND (${column} IS NULL OR ${column} <= ?)`)
+      .run(at, token, at - cooldownMs);
+    return result.changes > 0;
+  }
+
+  /** Puts back the previous value after a claimed opening failed, so the guest can retry at once. */
+  setLastOpen(token: string, door: Door, at: number | null) {
     const column = door === "house" ? "last_open_house" : "last_open_apartment";
     this.db.prepare(`UPDATE stays SET ${column} = ? WHERE token = ?`).run(at, token);
   }
@@ -166,7 +192,7 @@ export class Store {
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(e.at, e.door, e.action, e.success ? 1 : 0, e.detail, e.distance_m, e.guest_name);
-    this.db.prepare("DELETE FROM access_log WHERE at < ?").run(Date.now() - LOG_RETENTION_MS);
+    this.prune();
   }
 
   recentLog(limit: number): LogEntry[] {

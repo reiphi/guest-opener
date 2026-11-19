@@ -248,12 +248,6 @@ export const adminJs = `
     const question = e.target.dataset.confirm;
     if (question && !confirm(question)) e.preventDefault();
   });
-
-  const url = new URL(location.href);
-  if (url.searchParams.has("msg")) {
-    url.searchParams.delete("msg");
-    history.replaceState(null, "", url.pathname + url.search);
-  }
 })();
 `;
 

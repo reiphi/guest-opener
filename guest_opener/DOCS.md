@@ -161,7 +161,8 @@ gilt auch für sie.
 
 Die Testknöpfe bei den Geräten lösen sofort aus, ohne Standortprüfung, und fragen vorher nach.
 Im **Protokoll** steht, wer wann welche Tür ausgelöst hat. Einträge, die älter als ein Jahr sind,
-werden gelöscht.
+werden gelöscht. Aufenthalte werden ein Jahr nach der Abreise gelöscht, mit Name und PIN.
+Admin-Nutzer bleiben, bis sie gelöscht werden.
 
 ## Sicherheit
 
@@ -175,12 +176,16 @@ kann sie fälschen. Deshalb die Nachricht nur an den Gast schicken, bei Verdacht
 erzeugen oder den Zugang widerrufen, und `notify_service` einschalten.
 
 Die Verwaltung hat ein eigenes Passwort. Fünf Fehlversuche von einer Adresse, oder zwanzig
-insgesamt, sperren die Anmeldung für 15 Minuten. Das Cookie gilt 30 Tage, ist `HttpOnly` und
+insgesamt, sperren die Anmeldung für 15 Minuten. Die Sperre für alle gilt nicht für Geräte, auf
+denen sich schon einmal jemand erfolgreich angemeldet hat. So kann niemand die Verwaltung mit
+absichtlich falschen Passwörtern dauerhaft blockieren. Diese Geräte tragen ein signiertes Cookie
+und brauchen trotzdem das Passwort. Das Anmelde-Cookie gilt 30 Tage, ist `HttpOnly` und
 `SameSite=Strict`. Eine Änderung des Passworts meldet alle Verwaltungen ab. Davor soll der
 Reverse Proxy `/admin` noch einmal mit einem eigenen Passwort schützen.
 
-Seiten senden eine strikte Content-Security-Policy, verbieten Einbetten, erzwingen HTTPS hinter
-einem TLS-Proxy und nehmen höchstens 16 KB entgegen.
+Formulare werden nur von derselben Adresse angenommen, auch nicht von einer anderen Subdomain der
+eigenen Domain. Seiten senden eine strikte Content-Security-Policy, verbieten Einbetten, erzwingen
+HTTPS hinter einem TLS-Proxy und nehmen höchstens 16 KB entgegen.
 
 Gegen Home Assistant spricht das Add-on nur über die Supervisor-API (`homeassistant_api: true`).
 Es schaltet die beiden eingetragenen Entitäten und, wenn gesetzt, den Benachrichtigungsdienst.
@@ -189,6 +194,13 @@ Es schaltet die beiden eingetragenen Entitäten und, wenn gesetzt, den Benachric
 
 SQLite-Datei und das automatisch erzeugte Session-Secret liegen in `/data` und damit in jedem
 Home-Assistant-Backup. Backups automatisch wegkopieren.
+
+Die Datenbank enthält Links und PINs im Klartext, damit die Verwaltung die Nachricht an den Gast
+jederzeit neu erzeugen kann. Wer ein Backup hat, kann damit während eines laufenden Aufenthalts
+die Türen öffnen. Backups deshalb verschlüsselt ablegen. Home Assistant tut das mit dem
+Backup-Schlüssel automatisch.
+
+Der Watchdog von Home Assistant startet das Add-on neu, wenn es nicht mehr antwortet.
 
 Ohne Strom oder ohne Internet vor Ort geht von außen nichts mehr. Ein Schlüsselsafe mit
 Ersatzschlüssel bleibt der Notfallweg. Den Code nur im Notfall weitergeben.

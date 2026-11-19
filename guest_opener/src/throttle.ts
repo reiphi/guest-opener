@@ -5,6 +5,10 @@ type Bucket = { failures: number; windowStart: number; lockedUntil: number };
  * failures, each counted within `windowMs`. The global limit matters because X-Real-IP can be
  * spoofed when the add-on port is reached directly, without the reverse proxy in front.
  * Kept in memory: a restart clears it, which is acceptable for a single small server.
+ *
+ * The global limit would let anyone lock the real admin out by failing on purpose. A device that
+ * logged in successfully before carries a signed cookie and is exempt from the global lock (not
+ * from its own per-client limit). An attacker cannot forge that cookie.
  */
 export class LoginThrottle {
   private readonly clients = new Map<string, Bucket>();
@@ -14,9 +18,10 @@ export class LoginThrottle {
     private readonly opts = { perClient: 5, global: 20, windowMs: 15 * 60_000, lockMs: 15 * 60_000 },
   ) {}
 
-  /** Epoch ms until which logins are refused for this client, or null. */
-  lockedUntil(client: string, now = Date.now()): number | null {
-    const until = Math.max(this.all.lockedUntil, this.clients.get(client)?.lockedUntil ?? 0);
+  /** Epoch ms until which logins are refused for this client, or null. Known devices ignore the global lock. */
+  lockedUntil(client: string, now = Date.now(), knownDevice = false): number | null {
+    const global = knownDevice ? 0 : this.all.lockedUntil;
+    const until = Math.max(global, this.clients.get(client)?.lockedUntil ?? 0);
     return until > now ? until : null;
   }
 

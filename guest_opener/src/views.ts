@@ -209,7 +209,8 @@ export function guestMessageText(cfg: Config, stay: Stay, link: string, lang: La
   return [
     `Hallo ${stay.guest_name},`,
     ``,
-    `hier ist dein digitaler Schlüssel für die ${cfg.propertyName}:`,
+    // No article ("die Ferienwohnung", but "das Haus Alpenblick"): the quoted name stands on its own.
+    `hier ist dein digitaler Schlüssel für „${cfg.propertyName}“:`,
     link,
     `PIN: ${stay.pin}`,
     ``,

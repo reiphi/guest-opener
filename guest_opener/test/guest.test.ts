@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { HomeAssistant } from "../src/homeassistant";
+import type { Stay } from "../src/store";
+import { guestMessageText } from "../src/views";
 import { HOME, setup, testConfig } from "./helpers";
 
 const nearby = { lat: HOME.lat + 0.0005, lon: HOME.lon, accuracy: 30 };
@@ -92,6 +95,33 @@ test("double taps within the cooldown trigger the door only once", async () => {
   assert.equal((await s.door(stay.token, { door: "apartment", ...nearby })).status, 200);
   assert.equal((await s.door(stay.token, { door: "apartment", ...nearby })).status, 200);
   assert.equal(s.store.recentLog(10).filter((e) => e.success).length, 1);
+});
+
+test("parallel taps trigger the door only once", async () => {
+  const s = setup();
+  const stay = s.addStay();
+  await s.loginGuest(stay);
+  const results = await Promise.all([1, 2, 3].map(() => s.door(stay.token, { door: "apartment", ...nearby })));
+  assert.deepEqual(results.map((r) => r.status), [200, 200, 200]);
+  assert.equal(s.store.recentLog(10).length, 1);
+});
+
+test("after a failed opening the guest can retry at once", async () => {
+  let calls = 0;
+  const fetchImpl = (async () => (++calls === 1 ? new Response("unavailable", { status: 503 }) : Response.json([]))) as typeof fetch;
+  const s = setup(testConfig({ doorApartment: "lock.wohnung" }), new HomeAssistant("http://ha", "token", fetchImpl));
+  const stay = s.addStay();
+  await s.loginGuest(stay);
+  assert.equal((await s.door(stay.token, { door: "apartment", ...nearby })).status, 502);
+  assert.equal((await s.door(stay.token, { door: "apartment", ...nearby })).status, 200);
+  assert.equal(calls, 2);
+  assert.deepEqual(s.store.recentLog(10).map((e) => e.success), [true, false]);
+});
+
+test("the guest message names the property without an article", () => {
+  const cfg = testConfig({ propertyName: "Haus Alpenblick" });
+  const stay = { token: "t", role: "guest", guest_name: "Erika", pin: "123456", valid_from: 0, valid_until: 1 } as Stay;
+  assert.match(guestMessageText(cfg, stay, "https://x/g/t"), /Schlüssel für „Haus Alpenblick“:/);
 });
 
 test("a new PIN invalidates existing sessions", async () => {

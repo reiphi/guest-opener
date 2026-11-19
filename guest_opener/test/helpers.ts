@@ -20,11 +20,11 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
 }
 
 /** A tiny cookie-aware client around `app.request`. */
-export function setup(cfg = testConfig()) {
+export function setup(cfg = testConfig(), ha = new HomeAssistant("", "")) {
   const store = new Store(":memory:");
   const notifications: { title: string; message: string }[] = [];
   const notifier = { send: (title: string, message: string) => void notifications.push({ title, message }) };
-  const app = createApp(cfg, store, new Doors(cfg, new HomeAssistant("", "")), notifier);
+  const app = createApp(cfg, store, new Doors(cfg, ha), notifier);
   const jar = new Map<string, string>();
   const setCookies: string[] = [];
 

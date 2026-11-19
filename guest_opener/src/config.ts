@@ -138,6 +138,12 @@ export function buildConfig(
   if (doorHouse === "off" && doorApartment === "off") {
     errors.push("at least one of door_house and door_apartment must be enabled");
   }
+  const timezone = (o.timezone || "Europe/Berlin").trim();
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+  } catch {
+    errors.push(`timezone must be an IANA time zone like Europe/Berlin (got "${timezone}")`);
+  }
   const label = (value: string | undefined, fallback: string) => {
     const name = (value ?? "").trim().slice(0, 40);
     return name || fallback;
@@ -151,7 +157,7 @@ export function buildConfig(
   return {
     propertyName: o.property_name || "Ferienwohnung",
     publicUrl: (o.public_url || "").replace(/\/+$/, ""),
-    timezone: o.timezone || "Europe/Berlin",
+    timezone,
     propertyLat: lat,
     propertyLon: lon,
     geofenceRadiusM: radius,

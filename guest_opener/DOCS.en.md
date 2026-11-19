@@ -158,6 +158,8 @@ check applies to them too.
 
 The test buttons on the devices fire immediately, without a location check, and ask first.
 The **log** shows who triggered which door and when. Entries older than a year are deleted.
+Stays are deleted a year after departure, including name and PIN. Admin users remain until you
+delete them.
 
 ## Security
 
@@ -170,12 +172,15 @@ them. Send the message only to the guest, issue a new PIN or revoke the access i
 wrong, and turn on `notify_service`.
 
 The admin page has its own password. Five failures from one address, or twenty in total, lock
-login for 15 minutes. The cookie lasts 30 days, and is `HttpOnly` and `SameSite=Strict`. Changing
-the password signs out every admin session. In front of that, the reverse proxy should protect
-`/admin` with a password of its own.
+login for 15 minutes. The lock for everyone does not apply to devices that have logged in
+successfully before, so nobody can keep the admin page blocked with deliberate wrong passwords.
+Those devices carry a signed cookie and still need the password. The login cookie lasts 30 days,
+and is `HttpOnly` and `SameSite=Strict`. Changing the password signs out every admin session. In
+front of that, the reverse proxy should protect `/admin` with a password of its own.
 
-Pages send a strict Content-Security-Policy, forbid embedding, force HTTPS behind a TLS proxy and
-accept at most 16 KB.
+Forms are only accepted from the same address, not even from another subdomain of your own
+domain. Pages send a strict Content-Security-Policy, forbid embedding, force HTTPS behind a TLS
+proxy and accept at most 16 KB.
 
 The add-on talks to Home Assistant only through the Supervisor API (`homeassistant_api: true`).
 It switches the two configured entities and, if set, the notification service.
@@ -184,6 +189,12 @@ It switches the two configured entities and, if set, the notification service.
 
 The SQLite file and the generated session secret live in `/data` and are therefore in every
 Home Assistant backup. Copy backups off the machine automatically.
+
+The database holds links and PINs in plain text, so the admin page can produce the guest message
+again at any time. Anyone with a backup can use it to open the doors during an ongoing stay. Keep
+backups encrypted. Home Assistant does this automatically with the backup key.
+
+The Home Assistant watchdog restarts the add-on if it stops answering.
 
 With no power or no internet on site, nothing works from outside. A key safe with a spare key is
 the fallback. Share that code only in an emergency.

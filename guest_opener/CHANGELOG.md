@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.3.1
+
+- Eine ungültige Zeitzone verhindert den Start mit einer klaren Meldung. Bisher startete das
+  Add-on und jede Seite brach mit einem Fehler ab.
+- Die Gästenachricht nennt die Unterkunft ohne festen Artikel: „für „Haus Alpenblick““ statt
+  „für die Haus Alpenblick“.
+- Formulare von einer anderen Subdomain der eigenen Domain werden abgelehnt (bisher nur von
+  fremden Domains).
+- Mehrere gleichzeitige Anfragen lösen eine Tür nur einmal aus. Schlägt das Öffnen fehl, kann der
+  Gast sofort erneut tippen.
+- Die Sperre nach zwanzig falschen Admin-Passwörtern gilt nicht mehr für Geräte, die sich schon
+  einmal angemeldet haben. Absichtliche Fehlversuche können die Verwaltung so nicht mehr blockieren.
+- Aufenthalte werden ein Jahr nach der Abreise gelöscht, wie das Protokoll.
+- Meldungen in der Verwaltung kommen nicht mehr aus der Adresse (`?msg=`), sondern aus einem
+  kurzlebigen Cookie. Aktionen auf einen gelöschten Zugang melden das.
+- Unmögliche Daten wie der 30. Februar werden abgelehnt.
+- Watchdog: Home Assistant startet das Add-on neu, wenn es nicht mehr antwortet.
+
 ## 1.3.0
 
 - Jede Tür kann aus sein (`off`), simuliert (`mock`) oder eine Home-Assistant-Entität.

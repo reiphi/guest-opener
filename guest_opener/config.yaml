@@ -1,5 +1,5 @@
 name: Guest Opener
-version: "1.3.0"
+version: "1.3.1"
 slug: guest_opener
 description: Digitaler Gästeschlüssel – Link + PIN öffnet Haus- und Wohnungstür über Home-Assistant-Geräte
 url: https://github.com/reiphi/guest-opener
@@ -8,6 +8,8 @@ arch:
   - amd64
 startup: application
 boot: auto
+# Restarts the add-on if the web server stops answering.
+watchdog: http://[HOST]:[PORT:8787]/healthz
 homeassistant_api: true
 # Only needed to test from the LAN. Guests reach the add-on through the reverse proxy, not through this port.
 ports:

@@ -23,6 +23,10 @@ const DOOR_COOLDOWN_MS = 4_000;
 const LOGIN_FAILURE_DELAY_MS = 1_000;
 const SESSION_COOKIE = "go_session";
 const ADMIN_COOKIE = "go_admin";
+/** Marks a browser that logged in to the admin area before; see LoginThrottle. */
+const DEVICE_COOKIE = "go_device";
+/** One-shot message shown after an admin action. A cookie rather than ?msg=, so nobody can put text into a link. */
+const FLASH_COOKIE = "go_flash";
 const LANG_COOKIE = "go_lang";
 const ADMIN_SESSION_S = 30 * 86_400;
 // Browsers cap cookie lifetimes at 400 days, so admin users re-enter their PIN about once a year.
@@ -84,7 +88,10 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
 
   app.use("*", async (c, next) => {
     // The Origin header can't be compared to the request URL: dev servers and reverse proxies rewrite the host.
-    if (c.req.method === "POST" && c.req.header("sec-fetch-site") === "cross-site") {
+    // same-site is refused too: a page on a neighbouring subdomain would otherwise get the SameSite=Strict cookie.
+    // Browsers always send the header; requests without it come from scripts, which carry no session anyway.
+    const site = c.req.header("sec-fetch-site");
+    if (c.req.method === "POST" && site && site !== "same-origin" && site !== "none") {
       return c.text("Forbidden", 403);
     }
     await next();
@@ -243,17 +250,18 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
     }
 
     // Guests tend to double-tap; re-triggering the buzzer or latch within seconds is pointless.
-    const last = stay.last_open[door];
-    if (last && Date.now() - last < DOOR_COOLDOWN_MS) return c.json({ ok: true, message: success });
+    // The opening is claimed before the door is triggered, so parallel requests can't both get through.
+    const previous = store.getStay(stay.token)?.last_open[door] ?? null;
+    if (!store.claimOpen(stay.token, door, Date.now(), DOOR_COOLDOWN_MS)) return c.json({ ok: true, message: success });
 
     const result = await doors.operate(door, action);
     store.logAccess({ ...log, success: result.ok, detail: result.detail, distance_m });
     if (!result.ok) {
+      store.setLastOpen(stay.token, door, previous);
       notifier.send("Guest Opener: Tür reagiert nicht", `${name} (${stay.guest_name}): ${result.detail}`);
       return c.json({ ok: false, message: t.doorError }, 502);
     }
     const firstOpen = stay.role === "guest" && !stay.last_open.house && !stay.last_open.apartment;
-    store.markOpened(stay.token, door, Date.now());
     if (firstOpen) {
       const verb = action === "unlock" ? "aufgesperrt" : "geöffnet";
       notifier.send(
@@ -276,11 +284,19 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
     return safeEqual(sig, await adminSignature(exp));
   }
 
+  // Signed with the session secret only: a password change must not make a known device unknown.
+  const deviceSignature = (id: string) => hmacBase64url(cfg.sessionSecret, `device|${id}`);
+
+  async function isKnownDevice(c: Context): Promise<boolean> {
+    const [id, sig] = (getCookie(c, DEVICE_COOKIE) ?? "").split(".");
+    return !!id && !!sig && safeEqual(sig, await deviceSignature(id));
+  }
+
   app.get("/admin/login", (c) => c.html(loginPage(cfg)));
 
   app.post("/admin/login", async (c) => {
     const client = clientAddress(c);
-    const lockedUntil = loginThrottle.lockedUntil(client);
+    const lockedUntil = loginThrottle.lockedUntil(client, Date.now(), await isKnownDevice(c));
     if (lockedUntil) {
       const until = formatDateTime(lockedUntil, cfg.timezone, "de-DE");
       return c.html(loginPage(cfg, `Zu viele Fehlversuche. Anmeldung erst wieder ab ${until} möglich.`), 429);
@@ -308,6 +324,16 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
       sameSite: "Strict",
       maxAge: ADMIN_SESSION_S,
     });
+    if (!(await isKnownDevice(c))) {
+      const id = randomToken(16);
+      setCookie(c, DEVICE_COOKIE, `${id}.${await deviceSignature(id)}`, {
+        path: "/admin",
+        httpOnly: true,
+        secure: isHttps(c),
+        sameSite: "Strict",
+        maxAge: MAX_COOKIE_AGE_S,
+      });
+    }
     return c.redirect("/admin", 303);
   });
 
@@ -324,15 +350,20 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
   app.use("/admin", requireAdmin);
   app.use("/admin/*", requireAdmin);
 
-  const backToAdmin = (c: Context, msg: string) => c.redirect(`/admin?msg=${encodeURIComponent(msg)}`, 303);
+  const backToAdmin = (c: Context, msg: string) => {
+    setCookie(c, FLASH_COOKIE, msg, { path: "/admin", httpOnly: true, secure: isHttps(c), sameSite: "Strict", maxAge: 60 });
+    return c.redirect("/admin", 303);
+  };
 
   app.get("/admin", async (c) => {
+    const flash = getCookie(c, FLASH_COOKIE);
+    if (flash !== undefined) deleteCookie(c, FLASH_COOKIE, { path: "/admin" });
     const [house, apartment] = await Promise.all([
       doors.enabled("house") ? doors.battery("house") : Promise.resolve(null),
       doors.enabled("apartment") ? doors.battery("apartment") : Promise.resolve(null),
     ]);
     return c.html(
-      adminPage(cfg, store.listStays("guest"), store.listStays("admin"), { house, apartment }, publicOrigin(cfg, c), c.req.query("msg")),
+      adminPage(cfg, store.listStays("guest"), store.listStays("admin"), { house, apartment }, publicOrigin(cfg, c), flash),
     );
   });
 
@@ -364,30 +395,15 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
     return backToAdmin(c, `Admin-Nutzer ${name} angelegt.`);
   });
 
-  app.post("/admin/stays/:token/revoke", (c) => {
-    store.setRevoked(c.req.param("token"), true);
-    return backToAdmin(c, "Zugang widerrufen.");
-  });
+  const NOT_FOUND = "Diesen Zugang gibt es nicht mehr.";
+  const stayAction = (path: string, run: (token: string) => boolean, done: string) =>
+    app.post(`/admin/stays/:token/${path}`, (c) => backToAdmin(c, run(c.req.param("token")) ? done : NOT_FOUND));
 
-  app.post("/admin/stays/:token/restore", (c) => {
-    store.setRevoked(c.req.param("token"), false);
-    return backToAdmin(c, "Zugang reaktiviert.");
-  });
-
-  app.post("/admin/stays/:token/new-pin", (c) => {
-    store.setPin(c.req.param("token"), randomPin());
-    return backToAdmin(c, "Neuer PIN erzeugt. Bitte die neue Nachricht verschicken.");
-  });
-
-  app.post("/admin/stays/:token/unlock", (c) => {
-    store.resetAttempts(c.req.param("token"));
-    return backToAdmin(c, "PIN-Sperre aufgehoben.");
-  });
-
-  app.post("/admin/stays/:token/delete", (c) => {
-    store.deleteStay(c.req.param("token"));
-    return backToAdmin(c, "Zugang gelöscht.");
-  });
+  stayAction("revoke", (token) => store.setRevoked(token, true), "Zugang widerrufen.");
+  stayAction("restore", (token) => store.setRevoked(token, false), "Zugang reaktiviert.");
+  stayAction("new-pin", (token) => store.setPin(token, randomPin()), "Neuer PIN erzeugt. Bitte die neue Nachricht verschicken.");
+  stayAction("unlock", (token) => store.resetAttempts(token), "PIN-Sperre aufgehoben.");
+  stayAction("delete", (token) => store.deleteStay(token), "Zugang gelöscht.");
 
   app.post("/admin/test/:door/:action", async (c) => {
     const door = c.req.param("door");

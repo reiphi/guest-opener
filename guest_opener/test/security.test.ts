@@ -60,7 +60,35 @@ test("login throttle also has a global limit", () => {
   for (let i = 0; i < 5; i++) assert.equal(throttle.fail(`ip${i}`, 1000), null);
   assert.equal(throttle.fail("ip-new", 1000), "global");
   assert.ok(throttle.lockedUntil("anyone", 2000));
+  assert.equal(throttle.lockedUntil("anyone", 2000, true), null, "a known device ignores the global lock");
   assert.equal(throttle.lockedUntil("anyone", 1000 + 60_001), null);
+});
+
+test("a device that logged in before is not shut out by the global lock", async () => {
+  const s = setup();
+  await s.loginAdmin();
+  assert.ok(s.jar.has("go_device"));
+  await s.form("/admin/logout", {});
+  // Twenty addresses, one failure each: only the global limit kicks in. Sent in parallel to skip the failure delay.
+  await Promise.all(
+    Array.from({ length: 20 }, (_, i) =>
+      s.app.request("/admin/login", {
+        method: "POST",
+        body: new URLSearchParams({ password: "wrong" }),
+        headers: { "x-real-ip": `203.0.113.${i}` },
+      }),
+    ),
+  );
+  const stranger = await s.app.request("/admin/login", {
+    method: "POST",
+    body: new URLSearchParams({ password: PASSWORD }),
+    headers: { "x-real-ip": "198.51.100.1" },
+  });
+  assert.equal(stranger.status, 429);
+  assert.equal((await s.form("/admin/login", { password: PASSWORD }, { "x-real-ip": "198.51.100.2" })).status, 303);
+
+  s.jar.set("go_device", "forged.signature");
+  assert.equal((await s.form("/admin/login", { password: PASSWORD }, { "x-real-ip": "198.51.100.3" })).status, 429);
 });
 
 test("the language chosen via ?lang survives the PIN redirect", async () => {

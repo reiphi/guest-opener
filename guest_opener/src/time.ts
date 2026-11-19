@@ -32,6 +32,9 @@ export function localInputToEpoch(value: string, tz: string): number | null {
   if (!m) return null;
   const [, y, mo, d, h, mi] = m.map(Number);
   const naive = Date.UTC(y, mo - 1, d, h, mi);
+  // Date.UTC rolls over (Feb 30 → Mar 2); a value that doesn't survive the round trip is not a real date.
+  const check = new Date(naive);
+  if (check.getUTCMonth() !== mo - 1 || check.getUTCDate() !== d || h > 23 || mi > 59) return null;
   const first = offsetMs(naive, tz);
   const second = offsetMs(naive - first, tz);
   return naive - second;

@@ -22,10 +22,43 @@ test("wrong password is rejected, correct one logs in and logout works", async (
   assert.equal((await s.request("/admin")).status, 303);
 });
 
-test("cross-site POSTs are rejected", async () => {
+test("cross-site and same-site POSTs are rejected", async () => {
   const s = setup();
-  const res = await s.form("/admin/login", { password: PASSWORD }, { "sec-fetch-site": "cross-site" });
-  assert.equal(res.status, 403);
+  for (const site of ["cross-site", "same-site"]) {
+    const res = await s.form("/admin/login", { password: PASSWORD }, { "sec-fetch-site": site });
+    assert.equal(res.status, 403, site);
+  }
+  for (const site of ["same-origin", "none"]) {
+    const res = await s.form("/admin/login", { password: PASSWORD }, { "sec-fetch-site": site });
+    assert.equal(res.status, 303, site);
+  }
+});
+
+test("messages after an action are shown once and never taken from the URL", async () => {
+  const s = setup();
+  await s.loginAdmin();
+  const res = await s.form("/admin/stays", { guest_name: "Familie Huber", valid_from: "2030-07-01T15:00", valid_until: "2030-07-08T11:00" });
+  assert.equal(res.headers.get("location"), "/admin");
+  assert.match(await (await s.request("/admin")).text(), /Aufenthalt für Familie Huber angelegt/);
+  assert.doesNotMatch(await (await s.request("/admin")).text(), /angelegt/);
+  assert.doesNotMatch(await (await s.request("/admin?msg=Bitte+Passwort+schicken")).text(), /Bitte Passwort/);
+});
+
+test("actions on an unknown access say so", async () => {
+  const s = setup();
+  await s.loginAdmin();
+  for (const action of ["revoke", "restore", "new-pin", "unlock", "delete"]) {
+    await s.form(`/admin/stays/gibtsnicht/${action}`, {});
+    assert.match(await (await s.request("/admin")).text(), /Diesen Zugang gibt es nicht mehr/, action);
+  }
+});
+
+test("invalid dates are refused", async () => {
+  const s = setup();
+  await s.loginAdmin();
+  await s.form("/admin/stays", { guest_name: "X", valid_from: "2030-02-30T15:00", valid_until: "2030-03-08T11:00" });
+  assert.match(await (await s.request("/admin")).text(), /Bitte alle Felder ausfüllen/);
+  assert.equal(s.store.listStays("guest").length, 0);
 });
 
 test("creating stays and admin users", async () => {
@@ -37,8 +70,8 @@ test("creating stays and admin users", async () => {
   assert.equal(stay.valid_from, Date.UTC(2030, 6, 1, 13)); // 15:00 Berlin summer time
   assert.match(stay.pin, /^\d{6}$/);
 
-  const bad = await s.form("/admin/stays", { guest_name: "X", valid_from: "2030-07-08T11:00", valid_until: "2030-07-01T15:00" });
-  assert.match(decodeURIComponent(bad.headers.get("location")!), /Abreise muss nach/);
+  await s.form("/admin/stays", { guest_name: "X", valid_from: "2030-07-08T11:00", valid_until: "2030-07-01T15:00" });
+  assert.match(await (await s.request("/admin")).text(), /Abreise muss nach/);
 
   await s.form("/admin/admins", { name: "Putzfee" });
   const [admin] = s.store.listStays("admin");
@@ -111,7 +144,12 @@ test("invalid configuration fails loudly", () => {
       ),
     /door_house_mode/,
   );
+  assert.throws(
+    () => buildConfig({ admin_password: PASSWORD, geofence_radius_m: 0, timezone: "Europe/Berlinn" }, runtime),
+    /timezone/,
+  );
   const defaults = buildConfig({ admin_password: PASSWORD, geofence_radius_m: 0 }, runtime);
+  assert.equal(defaults.timezone, "Europe/Berlin");
   assert.equal(defaults.doorHouseMode, "open");
   assert.equal(defaults.doorApartmentMode, "open_and_lock");
   const named = buildConfig({ admin_password: PASSWORD, geofence_radius_m: 0, door_house: "off", door_apartment_name: "Hoftor" }, runtime);
