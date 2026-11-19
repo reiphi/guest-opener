@@ -46,7 +46,7 @@ Im Reiter **Konfiguration** mindestens diese Werte setzen, dann das Add-on neu s
 | `public_url` | Öffentliche Adresse, z. B. `https://tuer.example.de`. Steht in den Gäste-Links. Leer: die Adresse, unter der die Verwaltung gerade geöffnet ist. |
 | `timezone` | Zeitzone für An- und Abreise. Standard: `Europe/Berlin`. |
 | `property_lat`, `property_lon` | Koordinaten der Haustür. |
-| `geofence_radius_m` | So nah, in Metern, muss ein Gast sein, um zu öffnen. `0` schaltet die Prüfung ab. Standard: 250. |
+| `geofence_radius_m` | So nah, in Metern, muss ein Gast sein, um zu öffnen. Weil GPS im Haus oder in engen Gassen ungenau ist, kommt die vom Handy gemeldete Ungenauigkeit dazu, höchstens 200 m. `0` schaltet die Prüfung ab. Standard: 250. |
 | `host_phone` | Nummer, die Gästen als Anruf-Schaltfläche angezeigt wird. |
 | `admin_password` | Passwort für `/admin`. Mindestens 12 Zeichen. Eine Änderung meldet alle Verwaltungen ab. |
 | `door_house`, `door_apartment` | `off` blendet die Tür aus. `mock` simuliert sie. Sonst die Entität, z. B. `switch.haustuer` oder `lock.wohnungstuer`. Mindestens eine Tür muss an sein. |
@@ -58,8 +58,9 @@ Im Reiter **Konfiguration** mindestens diese Werte setzen, dann das Add-on neu s
 `mock` löst keine echte Tür aus. Damit lässt sich die Verwaltung ausprobieren, bevor die Entitäten feststehen.
 
 Das Add-on startet nicht, wenn das Passwort kürzer als 12 Zeichen ist, die Koordinaten fehlen,
-während die Standortprüfung an ist, beide Türen auf `off` stehen, oder eine Betriebsart ein Schloss
-verlangt, die Entität aber keines ist.
+während die Standortprüfung an ist, die Zeitzone unbekannt ist, beide Türen auf `off` stehen, oder
+eine Betriebsart ein Schloss verlangt, die Entität aber keines ist. Die Gründe stehen im Protokoll
+des Add-ons.
 
 ### Entitäten
 

@@ -61,6 +61,8 @@ nur über die Version in `config.yaml`.
   Entitäts-IDs gehören nur in die Add-on-Konfiguration bzw. `.env`. Beispiele bleiben Platzhalter.
 - Keine Inline-Skripte oder -Styles (CSP `script-src 'self'`, `style-src 'self'`); neues JS/CSS nach `assets.ts`.
 - Möglichst keine neuen Abhängigkeiten; das Laufzeit-Image enthält nur das Bundle.
+- `allowScripts` in `package.json` (npm 11) braucht beide esbuild-Versionen: die eigene und die, die `tsx` mitbringt
+  (`npm ls esbuild`). Nach Updates von esbuild oder tsx anpassen.
 - Zeilenenden LF (`.gitattributes`).
 
 ## Sicherheit
@@ -70,7 +72,10 @@ fälschen. Nicht aufweichen:
 
 - Gast-Session-Cookie = HMAC über Token, PIN und `valid_until` → neuer PIN meldet alle Geräte ab.
 - Admin-Cookie = HMAC über Passwort und Ablauf → Passwortänderung meldet alle ab.
-- PIN-Sperre pro Link (5 Versuche, 15 min), Admin-Login-Sperre pro Adresse und global.
+- PIN-Sperre pro Link (5 Versuche, 15 min), Admin-Login-Sperre pro Adresse und global. Geräte mit gültigem
+  `go_device`-Cookie (HMAC, nach erfolgreichem Login gesetzt) sind von der globalen Sperre ausgenommen.
+- Meldungen nach Admin-Aktionen kommen aus dem Cookie `go_flash`, nie aus der URL.
+- `/g/:token/door` nimmt nur `application/json` an (Schutz gegen `text/plain`-Formulare).
 - Die Login-Sperre verwendet `X-Real-IP` (vom Reverse Proxy gesetzt); `CF-Connecting-IP` wird bewusst ignoriert.
 - POST mit `Sec-Fetch-Site: cross-site` wird abgelehnt; Admin-Cookie `SameSite=Strict`.
 - Zusperren (`lock`) überspringt die Standortprüfung, Öffnen und Aufsperren nie.

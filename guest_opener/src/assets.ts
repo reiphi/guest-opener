@@ -118,7 +118,7 @@ details.more summary{list-style:none}
 details.more summary::-webkit-details-marker{display:none}
 .menu{position:absolute;right:0;top:calc(100% + 6px);z-index:4;display:grid;min-width:220px;padding:6px;background:#252525;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .menu form{margin:0}
-.menu button{display:block;width:100%;padding:.6em .8em;border:0;border-radius:9px;background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.menu button{display:block;width:100%;padding:.6em .8em;border:0;border-radius:var(--radius);background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
 .menu button:hover{background:var(--surface-2)}
 .menu hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
 .menu .danger{color:var(--danger)}

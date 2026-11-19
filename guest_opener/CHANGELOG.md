@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.3
+
+- Türen lassen sich nur noch mit einer JSON-Anfrage auslösen. Ein gewöhnliches HTML-Formular kann
+  das nicht, auch nicht in älteren Browsern ohne `Sec-Fetch-Site` (Safari vor 16.4).
+- Aufenthalte mit einer Abreise in der Vergangenheit werden nicht mehr angelegt.
+- Die Push-Nachricht zur globalen Login-Sperre sagt, dass bekannte Geräte ausgenommen sind.
+- Anleitung: Die Standortprüfung rechnet bis zu 200 m GPS-Ungenauigkeit zum Radius dazu. Eine
+  unbekannte Zeitzone verhindert den Start.
+
 ## 1.3.2
 
 - Sicherheitsupdate: `hono` 4.13.19 und `@hono/node-server` 2.1.9. Behoben sind unter anderem ein
@@ -11,8 +20,8 @@
 
 - Eine ungültige Zeitzone verhindert den Start mit einer klaren Meldung. Bisher startete das
   Add-on und jede Seite brach mit einem Fehler ab.
-- Die Gästenachricht nennt die Unterkunft ohne festen Artikel: „für „Haus Alpenblick““ statt
-  „für die Haus Alpenblick“.
+- Die Gästenachricht nennt die Unterkunft ohne festen Artikel und in Anführungszeichen, damit
+  auch Namen wie Haus Alpenblick passen (bisher „für die …“).
 - Formulare von einer anderen Subdomain der eigenen Domain werden abgelehnt (bisher nur von
   fremden Domains).
 - Mehrere gleichzeitige Anfragen lösen eine Tür nur einmal aus. Schlägt das Öffnen fehl, kann der

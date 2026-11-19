@@ -97,6 +97,19 @@ test("double taps within the cooldown trigger the door only once", async () => {
   assert.equal(s.store.recentLog(10).filter((e) => e.success).length, 1);
 });
 
+test("the door endpoint only accepts JSON, so a plain HTML form can't trigger it", async () => {
+  const s = setup();
+  const stay = s.addStay();
+  await s.loginGuest(stay);
+  const res = await s.request(`/g/${stay.token}/door`, {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: JSON.stringify({ door: "house", ...nearby }),
+  });
+  assert.equal(res.status, 415);
+  assert.equal(s.store.recentLog(10).length, 0);
+});
+
 test("parallel taps trigger the door only once", async () => {
   const s = setup();
   const stay = s.addStay();

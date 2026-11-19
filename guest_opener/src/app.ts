@@ -89,7 +89,8 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
   app.use("*", async (c, next) => {
     // The Origin header can't be compared to the request URL: dev servers and reverse proxies rewrite the host.
     // same-site is refused too: a page on a neighbouring subdomain would otherwise get the SameSite=Strict cookie.
-    // Browsers always send the header; requests without it come from scripts, which carry no session anyway.
+    // Current browsers send the header. Older ones (Safari before 16.4) don't; for them the SameSite cookies and
+    // the JSON-only door endpoint remain as protection.
     const site = c.req.header("sec-fetch-site");
     if (c.req.method === "POST" && site && site !== "same-origin" && site !== "none") {
       return c.text("Forbidden", 403);
@@ -215,6 +216,11 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
     if (!stay || stayStatus(stay) !== "active" || !(await hasSession(c, stay))) {
       return c.json({ ok: false, message: t.sessionExpired }, 401);
     }
+    // An HTML form can't send application/json, but with enctype="text/plain" it can send a JSON-shaped body.
+    // Requiring the content type means only a script on our own origin (CORS preflight) can reach this.
+    if (!/^application\/json\b/i.test(c.req.header("content-type") ?? "")) {
+      return c.json({ ok: false, message: t.doorError }, 415);
+    }
 
     const body = await c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
     const door = body.door;
@@ -308,7 +314,7 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
         notifier.send(
           "Guest Opener: Admin-Login gesperrt",
           lock === "global"
-            ? "Sehr viele falsche Admin-Passwörter – die Anmeldung ist für alle 15 Minuten gesperrt."
+            ? "Sehr viele falsche Admin-Passwörter – die Anmeldung ist 15 Minuten lang für alle Geräte gesperrt, auf denen noch niemand angemeldet war."
             : `Mehrere falsche Admin-Passwörter von ${client} – diese Adresse ist 15 Minuten gesperrt.`,
         );
       }
@@ -376,6 +382,7 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
     const until = localInputToEpoch(String(form.valid_until ?? ""), cfg.timezone);
     if (!name || from === null || until === null) return backToAdmin(c, "Bitte alle Felder ausfüllen.");
     if (until <= from) return backToAdmin(c, "Die Abreise muss nach der Anreise liegen.");
+    if (until <= Date.now()) return backToAdmin(c, "Die Abreise liegt in der Vergangenheit.");
     store.createStay({ role: "guest", guest_name: name, token: randomToken(), pin: randomPin(), valid_from: from, valid_until: until });
     return backToAdmin(c, `Aufenthalt für ${name} angelegt.`);
   });

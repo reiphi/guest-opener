@@ -47,7 +47,7 @@ On the **Configuration** tab set at least these values, then restart the add-on:
 | `public_url` | Public address, for example `https://door.example.com`. Used in guest links. Empty: the address the admin page was opened with. |
 | `timezone` | Time zone for arrival and departure. Default: `Europe/Berlin`. |
 | `property_lat`, `property_lon` | Coordinates of the front door. |
-| `geofence_radius_m` | How close, in metres, a guest must be to open a door. `0` disables the check. Default: 250. |
+| `geofence_radius_m` | How close, in metres, a guest must be to open a door. Because GPS is inaccurate indoors or in narrow streets, the inaccuracy the phone reports is added, up to 200 m. `0` disables the check. Default: 250. |
 | `host_phone` | Number shown to guests as a call button. |
 | `admin_password` | Password for `/admin`. At least 12 characters. Changing it signs out every admin session. |
 | `door_house`, `door_apartment` | `off` hides the door. `mock` simulates it. Otherwise the entity, for example `switch.front_door` or `lock.apartment_door`. At least one door must be on. |
@@ -59,8 +59,8 @@ On the **Configuration** tab set at least these values, then restart the add-on:
 `mock` does not trigger a real door. Use it to try the admin page before the entities are known.
 
 The add-on does not start if the password is shorter than 12 characters, if the coordinates are
-missing while the location check is on, if both doors are `off`, or if a mode needs a lock but the
-entity is not one.
+missing while the location check is on, if the time zone is unknown, if both doors are `off`, or if
+a mode needs a lock but the entity is not one. The reasons are in the add-on log.
 
 ### Entities
 

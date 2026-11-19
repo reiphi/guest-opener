@@ -72,6 +72,9 @@ test("creating stays and admin users", async () => {
 
   await s.form("/admin/stays", { guest_name: "X", valid_from: "2030-07-08T11:00", valid_until: "2030-07-01T15:00" });
   assert.match(await (await s.request("/admin")).text(), /Abreise muss nach/);
+  await s.form("/admin/stays", { guest_name: "X", valid_from: "2020-07-01T15:00", valid_until: "2020-07-08T11:00" });
+  assert.match(await (await s.request("/admin")).text(), /Abreise liegt in der Vergangenheit/);
+  assert.equal(s.store.listStays("guest").length, 1);
 
   await s.form("/admin/admins", { name: "Putzfee" });
   const [admin] = s.store.listStays("admin");

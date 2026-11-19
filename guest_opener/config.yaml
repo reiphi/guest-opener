@@ -1,5 +1,5 @@
 name: Guest Opener
-version: "1.3.2"
+version: "1.3.3"
 slug: guest_opener
 description: Digitaler Gästeschlüssel – Link + PIN öffnet Haus- und Wohnungstür über Home-Assistant-Geräte
 url: https://github.com/reiphi/guest-opener
