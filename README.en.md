@@ -9,11 +9,11 @@ door from their phone. After checkout the access stops working.
 The doors are any Home Assistant entities. The property name, coordinates, phone number and public
 address live only in the add-on configuration, not in this repository.
 
-<img src="docs/screenshots/gaesteseite.png" alt="Guest page with buttons for the front door, the apartment door and locking" width="420">
+<img src="docs/screenshots/gaesteseite.en.png" alt="Guest page with buttons for the front door, the apartment door and locking" width="420">
 
 <img src="docs/screenshots/verwaltung.png" alt="Admin page with devices, a new stay and the guest list" width="800">
 
-The pictures show sample data from a local test setup.
+The pictures show sample data from a local test setup. The admin page is available in German only.
 
 ## Features
 

@@ -19,7 +19,7 @@ configuration:
     description: Gäste müssen so nah am Haus sein, um eine Tür zu öffnen. 0 schaltet die Prüfung ab.
   host_phone:
     name: Telefonnummer für Notfälle
-    description: Wird den Gästen als „Probleme? Ruf uns an“ angezeigt.
+    description: Wird den Gästen als „Fragen oder Probleme? Rufen Sie uns an“ angezeigt.
   admin_password:
     name: Admin-Passwort
     description: Für /admin, mindestens 12 Zeichen. Eine Änderung meldet alle Admin-Sitzungen ab.

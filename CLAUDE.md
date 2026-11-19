@@ -56,6 +56,9 @@ nur über die Version in `config.yaml`.
 
 - Code-Kommentare und Fehlermeldungen in `buildConfig` auf Englisch; Oberfläche, Benachrichtigungen,
   Dokumentation, Changelog und Commit-Texte auf Deutsch.
+- Ansprache: Gäste werden gesiezt, gastfreundlich und herzlich („Herzlich willkommen“, „Wir freuen uns auf Sie!“).
+  Gilt für die Gästeseite (`i18n.ts`) und die Gästenachricht (`guestMessageText` in `views.ts`); ein Test in
+  `test/guest.test.ts` prüft auf Du-Formen. Die Verwaltung richtet sich an die Gastgeber und duzt.
 - Commit-Texte: ein Satz im Imperativ, z. B. „Jede Tür einzeln ausblendbar machen, mit Name und Betriebsart.“
 - Keine echten Daten ins Repository: Name der Unterkunft, Koordinaten, Telefonnummer, öffentliche Adresse und
   Entitäts-IDs gehören nur in die Add-on-Konfiguration bzw. `.env`. Beispiele bleiben Platzhalter.

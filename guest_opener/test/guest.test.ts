@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { HomeAssistant } from "../src/homeassistant";
+import { texts } from "../src/i18n";
 import type { Stay } from "../src/store";
 import { guestMessageText } from "../src/views";
 import { HOME, setup, testConfig } from "./helpers";
@@ -135,6 +136,31 @@ test("the guest message names the property without an article", () => {
   const cfg = testConfig({ propertyName: "Haus Alpenblick" });
   const stay = { token: "t", role: "guest", guest_name: "Erika", pin: "123456", valid_from: 0, valid_until: 1 } as Stay;
   assert.match(guestMessageText(cfg, stay, "https://x/g/t"), /Schlüssel für „Haus Alpenblick“:/);
+});
+
+// Guests are addressed formally ("Sie"); the admin pages are for the hosts and may use "du".
+const INFORMAL = /\b(du|dich|dir|dein\w*|gib|tippe|lade|erlaube|versuche|ruf)\b/i;
+
+test("German guest texts address the guest as Sie", async () => {
+  for (const [key, value] of Object.entries(texts.de)) {
+    const text = typeof value === "function" ? (value as (arg: string) => string)("X") : value;
+    assert.doesNotMatch(text, INFORMAL, key);
+  }
+  const cfg = testConfig({ hostPhone: "+49 170 0000000" });
+  const stay = { token: "t", role: "guest", guest_name: "Erika", pin: "123456", valid_from: 0, valid_until: 1 } as Stay;
+  const message = guestMessageText(cfg, stay, "https://x/g/t");
+  assert.doesNotMatch(message, INFORMAL);
+  assert.match(message, /hier ist Ihr digitaler Schlüssel/);
+  assert.match(message, /Wir wünschen Ihnen einen schönen Aufenthalt!/);
+  assert.doesNotMatch(guestMessageText(cfg, { ...stay, role: "admin" }, "https://x/g/t"), /schönen Aufenthalt/);
+
+  const s = setup();
+  const guest = s.addStay();
+  const pinPage = await (await s.request(`/g/${guest.token}`, { headers: { "accept-language": "de" } })).text();
+  assert.match(pinPage, /Bitte geben Sie Ihren 6-stelligen PIN ein/);
+  await s.loginGuest(guest);
+  const doorsPage = await (await s.request(`/g/${guest.token}`, { headers: { "accept-language": "de" } })).text();
+  assert.doesNotMatch(doorsPage.replace(/<[^>]+>/g, " "), INFORMAL);
 });
 
 test("a new PIN invalidates existing sessions", async () => {

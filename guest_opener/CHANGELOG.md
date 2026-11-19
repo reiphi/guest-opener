@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.4
+
+- Gäste werden auf Deutsch gesiezt, auf der Gästeseite und in der kopierten Nachricht. Der Ton ist
+  herzlicher, z. B. „Herzlich willkommen“ und „Wir freuen uns auf Sie!“.
+- Die Nachricht an Gäste endet mit einem Gruß zum Aufenthalt (Deutsch und Englisch). Admin-Nutzer
+  wie die Reinigung bekommen ihn nicht.
+- Die Verwaltung spricht weiterhin die Gastgeber an und bleibt beim Du.
+
 ## 1.3.3
 
 - Türen lassen sich nur noch mit einer JSON-Anfrage auslösen. Ein gewöhnliches HTML-Formular kann

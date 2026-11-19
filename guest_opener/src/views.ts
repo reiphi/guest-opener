@@ -173,17 +173,17 @@ function guestInstructions(cfg: Config, lang: Lang): string {
       if (doorBuzzes(cfg, door)) return `${name}: tap “Open ${name}”, then push the door.`;
       return `${name}: tap “Open ${name}”.`;
     }
-    if (actions.includes("unlock")) return `${name}: auf „${name} aufsperren“ tippen und die Klinke drücken. Beim Gehen auf „${name} zusperren“ tippen.`;
-    if (actions.includes("lock")) return `${name}: auf „${name} öffnen“ tippen. Beim Gehen zuziehen und auf „${name} zusperren“ tippen.`;
-    if (doorBuzzes(cfg, door)) return `${name}: auf „${name} öffnen“ tippen und die Tür aufdrücken.`;
-    return `${name}: auf „${name} öffnen“ tippen.`;
+    if (actions.includes("unlock")) return `${name}: Tippen Sie auf „${name} aufsperren“ und drücken Sie die Klinke. Beim Gehen tippen Sie auf „${name} zusperren“.`;
+    if (actions.includes("lock")) return `${name}: Tippen Sie auf „${name} öffnen“. Beim Gehen ziehen Sie die Tür zu und tippen auf „${name} zusperren“.`;
+    if (doorBuzzes(cfg, door)) return `${name}: Tippen Sie auf „${name} öffnen“ und drücken Sie die Tür auf.`;
+    return `${name}: Tippen Sie auf „${name} öffnen“.`;
   });
-  const intro = lang === "en" ? "Open the link and enter the PIN." : "Öffne den Link und gib den PIN ein.";
+  const intro = lang === "en" ? "Open the link and enter the PIN." : "Öffnen Sie einfach den Link und geben Sie den PIN ein.";
   const geo =
     cfg.geofenceRadiusM > 0
       ? lang === "en"
         ? " Please allow location access when your phone asks."
-        : " Bitte erlaube den Standortzugriff, wenn dein Handy fragt."
+        : " Bitte erlauben Sie den Standortzugriff, wenn Ihr Handy danach fragt."
       : "";
   return `${intro} ${lines.join(" ")}${geo}`;
 }
@@ -203,6 +203,7 @@ export function guestMessageText(cfg: Config, stay: Stay, link: string, lang: La
       stay.role === "admin" ? `This access does not expire.` : `Valid from ${fmt(stay.valid_from)} until ${fmt(stay.valid_until)}.`,
       guestInstructions(cfg, "en"),
       ...(phone ? [``, `If anything goes wrong: ${phone}`] : []),
+      ...(stay.role === "guest" ? [``, `We hope you enjoy your stay!`] : []),
     ].join("\n");
   }
   const fmt = (ts: number) => formatDateTime(ts, tz, "de-DE");
@@ -210,13 +211,15 @@ export function guestMessageText(cfg: Config, stay: Stay, link: string, lang: La
     `Hallo ${stay.guest_name},`,
     ``,
     // No article ("die Ferienwohnung", but "das Haus Alpenblick"): the quoted name stands on its own.
-    `hier ist dein digitaler Schlüssel für „${cfg.propertyName}“:`,
+    `hier ist Ihr digitaler Schlüssel für „${cfg.propertyName}“:`,
     link,
     `PIN: ${stay.pin}`,
     ``,
     stay.role === "admin" ? `Der Zugang ist unbegrenzt gültig.` : `Gültig von ${fmt(stay.valid_from)} bis ${fmt(stay.valid_until)}.`,
     guestInstructions(cfg, "de"),
-    ...(phone ? [``, `Bei Problemen: ${phone}`] : []),
+    ...(phone ? [``, `Bei Fragen oder Problemen erreichen Sie uns unter ${phone}.`] : []),
+    // Admin users (e.g. cleaning) get the key without the holiday greeting.
+    ...(stay.role === "guest" ? [``, `Wir wünschen Ihnen einen schönen Aufenthalt!`] : []),
   ].join("\n");
 }
 
