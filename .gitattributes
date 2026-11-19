@@ -1,0 +1,4 @@
+# Text files are stored and checked out with LF, independent of core.autocrlf.
+* text=auto eol=lf
+
+*.png binary
