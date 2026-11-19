@@ -103,11 +103,11 @@ function doorButton(door: Door, action: DoorAction, icon: string, label: string,
 </button>`;
 }
 
-function guestDoorButtons(cfg: Config, t: Texts): string {
+function guestDoorButtons(cfg: Config, t: Texts, lang: Lang): string {
   const iconFor = (door: Door, action: DoorAction) => (action === "lock" ? "🔒" : door === "house" ? "🏠" : "🚪");
   return DOORS.flatMap((door) =>
     doorActions(cfg, door).map((action) => {
-      const name = doorTitle(cfg, door);
+      const name = doorTitle(cfg, door, lang);
       if (action === "lock") return doorButton(door, action, iconFor(door, action), t.lock(name), t.lockSub);
       if (action === "unlock") return doorButton(door, action, iconFor(door, action), t.unlock(name), t.unlockSub);
       const sub = doorBuzzes(cfg, door) ? t.openBuzzerSub : t.openLatchSub;
@@ -145,7 +145,7 @@ ${brand(cfg)}
 <h1>${esc(t.welcome(stay.guest_name))}</h1>
 <p class="chip">${esc(validity)}</p>
 <div class="doors">
-  ${guestDoorButtons(cfg, t)}
+  ${guestDoorButtons(cfg, t, lang)}
 </div>
 <div id="status" class="status" role="status" aria-live="polite" hidden></div>
 <ul class="steps">
@@ -165,7 +165,7 @@ const actionLabel = { open: "öffnen", unlock: "aufsperren", lock: "zusperren" }
 /** Instructions follow the configured doors, so the copied message matches the buttons. */
 function guestInstructions(cfg: Config, lang: Lang): string {
   const lines = DOORS.filter((door) => doorEnabled(cfg, door)).map((door) => {
-    const name = doorTitle(cfg, door);
+    const name = doorTitle(cfg, door, lang);
     const actions = doorActions(cfg, door);
     if (lang === "en") {
       if (actions.includes("unlock")) return `${name}: tap “Unlock ${name}”, then press the handle. When leaving, tap “Lock ${name}”.`;

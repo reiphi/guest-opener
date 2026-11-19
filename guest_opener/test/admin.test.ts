@@ -158,4 +158,10 @@ test("invalid configuration fails loudly", () => {
   const named = buildConfig({ admin_password: PASSWORD, geofence_radius_m: 0, door_house: "off", door_apartment_name: "Hoftor" }, runtime);
   assert.equal(named.doorHouse, "off");
   assert.equal(named.doorApartmentName, "Hoftor");
+  assert.equal(named.doorApartmentNameEn, "Hoftor", "a German name the host chose is kept without an English label");
+  assert.equal(defaults.doorHouseNameEn, "Front door");
+  assert.equal(defaults.doorApartmentNameEn, "Apartment door");
+  const english = buildConfig({ admin_password: PASSWORD, geofence_radius_m: 0, door_house_name_en: "Main entrance" }, runtime);
+  assert.equal(english.doorHouseNameEn, "Main entrance");
+  assert.equal(english.doorHouseName, "Haustür");
 });

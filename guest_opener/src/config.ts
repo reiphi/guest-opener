@@ -21,6 +21,9 @@ export type Config = {
   doorApartment: string;
   doorHouseName: string;
   doorApartmentName: string;
+  /** Labels on the English guest page and message. */
+  doorHouseNameEn: string;
+  doorApartmentNameEn: string;
   doorHouseMode: DoorMode;
   doorApartmentMode: DoorMode;
   /** Optional sensor.* (percent) or binary_sensor.* (on = low) entity reporting the door device's battery. */
@@ -46,10 +49,12 @@ type Options = {
   admin_password?: string;
   door_house?: string;
   door_house_name?: string;
+  door_house_name_en?: string;
   door_house_mode?: string;
   door_house_battery?: string;
   door_apartment?: string;
   door_apartment_name?: string;
+  door_apartment_name_en?: string;
   door_apartment_mode?: string;
   door_apartment_battery?: string;
   notify_service?: string;
@@ -70,10 +75,12 @@ function optionsFromEnv(env: NodeJS.ProcessEnv): Options {
     admin_password: env.ADMIN_PASSWORD,
     door_house: env.DOOR_HOUSE,
     door_house_name: env.DOOR_HOUSE_NAME,
+    door_house_name_en: env.DOOR_HOUSE_NAME_EN,
     door_house_mode: env.DOOR_HOUSE_MODE,
     door_house_battery: env.DOOR_HOUSE_BATTERY,
     door_apartment: env.DOOR_APARTMENT,
     door_apartment_name: env.DOOR_APARTMENT_NAME,
+    door_apartment_name_en: env.DOOR_APARTMENT_NAME_EN,
     door_apartment_mode: env.DOOR_APARTMENT_MODE,
     door_apartment_battery: env.DOOR_APARTMENT_BATTERY,
     notify_service: env.NOTIFY_SERVICE,
@@ -152,6 +159,12 @@ export function buildConfig(
   if (notify && !/^notify\.[a-z0-9_]+$/.test(notify)) {
     errors.push(`notify_service must look like notify.mobile_app_my_phone (got "${o.notify_service}")`);
   }
+  const houseName = label(o.door_house_name, "Haustür");
+  const apartmentName = label(o.door_apartment_name, "Wohnungstür");
+  // Without an English label, the default German name gets the English default. A name the host chose
+  // can't be translated here, so it is kept as is.
+  const labelEn = (value: string | undefined, german: string, germanDefault: string, englishDefault: string) =>
+    label(value, german === germanDefault ? englishDefault : german);
   if (errors.length) throw new Error(`Invalid configuration:\n- ${errors.join("\n- ")}`);
 
   return {
@@ -166,8 +179,10 @@ export function buildConfig(
     sessionSecret: runtime.sessionSecret,
     doorHouse,
     doorApartment,
-    doorHouseName: label(o.door_house_name, "Haustür"),
-    doorApartmentName: label(o.door_apartment_name, "Wohnungstür"),
+    doorHouseName: houseName,
+    doorApartmentName: apartmentName,
+    doorHouseNameEn: labelEn(o.door_house_name_en, houseName, "Haustür", "Front door"),
+    doorApartmentNameEn: labelEn(o.door_apartment_name_en, apartmentName, "Wohnungstür", "Apartment door"),
     doorHouseMode,
     doorApartmentMode,
     batteryHouse: batteries.door_house_battery,

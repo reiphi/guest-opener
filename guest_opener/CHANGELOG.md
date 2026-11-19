@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.5
+
+- Neue Optionen `door_house_name_en` und `door_apartment_name_en`: englische Türbezeichnungen für
+  die englische Gästeseite und Nachricht. Ohne Angabe heißen die Türen dort „Front door“ und
+  „Apartment door“. Eine geänderte deutsche Bezeichnung bleibt ohne englische Angabe erhalten.
+- Benachrichtigungen an die Gastgeber nennen die Tür weiterhin mit der deutschen Bezeichnung.
+
 ## 1.3.4
 
 - Gäste werden auf Deutsch gesiezt, auf der Gästeseite und in der kopierten Nachricht. Der Ton ist

@@ -51,6 +51,7 @@ Im Reiter **Konfiguration** mindestens diese Werte setzen, dann das Add-on neu s
 | `admin_password` | Passwort für `/admin`. Mindestens 12 Zeichen. Eine Änderung meldet alle Verwaltungen ab. |
 | `door_house`, `door_apartment` | `off` blendet die Tür aus. `mock` simuliert sie. Sonst die Entität, z. B. `switch.haustuer` oder `lock.wohnungstuer`. Mindestens eine Tür muss an sein. |
 | `door_house_name`, `door_apartment_name` | Bezeichnung auf den Knöpfen und in der Gästenachricht. Leer: `Haustür` bzw. `Wohnungstür`. |
+| `door_house_name_en`, `door_apartment_name_en` | Optional. Bezeichnung für Gäste, die Seite und Nachricht auf Englisch sehen. Leer: `Front door` bzw. `Apartment door`. Wurde die deutsche Bezeichnung geändert, steht ohne englische Bezeichnung die deutsche. |
 | `door_house_mode`, `door_apartment_mode` | `open` nur öffnen. `open_and_lock` Falle ziehen und zusperren. `unlock_and_lock` aufsperren und zusperren. Die letzten beiden brauchen `lock.*` oder `mock`. |
 | `door_house_battery`, `door_apartment_battery` | Optional. `sensor.*` in Prozent oder `binary_sensor.*` (`on` = schwach). |
 | `notify_service` | Optional. Dienst für Push-Nachrichten, z. B. `notify.mobile_app_mein_handy`. |

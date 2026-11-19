@@ -52,6 +52,7 @@ On the **Configuration** tab set at least these values, then restart the add-on:
 | `admin_password` | Password for `/admin`. At least 12 characters. Changing it signs out every admin session. |
 | `door_house`, `door_apartment` | `off` hides the door. `mock` simulates it. Otherwise the entity, for example `switch.front_door` or `lock.apartment_door`. At least one door must be on. |
 | `door_house_name`, `door_apartment_name` | Label on the buttons and in the guest message. Empty: `Haustür` and `Wohnungstür`. |
+| `door_house_name_en`, `door_apartment_name_en` | Optional. Label for guests who see the page and message in English. Empty: `Front door` and `Apartment door`. If you changed the German label, it is used instead. |
 | `door_house_mode`, `door_apartment_mode` | `open` opens only. `open_and_lock` unlatches and locks. `unlock_and_lock` unlocks and locks. The last two need a `lock.*` or `mock`. |
 | `door_house_battery`, `door_apartment_battery` | Optional. A `sensor.*` in percent, or a `binary_sensor.*` (`on` = low). |
 | `notify_service` | Optional. Push service, for example `notify.mobile_app_my_phone`. |

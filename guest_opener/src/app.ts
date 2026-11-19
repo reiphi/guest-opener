@@ -211,7 +211,7 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
   });
 
   app.post("/g/:token/door", async (c) => {
-    const { t } = guestLang(c);
+    const { lang, t } = guestLang(c);
     const stay = store.getStay(c.req.param("token"));
     if (!stay || stayStatus(stay) !== "active" || !(await hasSession(c, stay))) {
       return c.json({ ok: false, message: t.sessionExpired }, 401);
@@ -228,7 +228,9 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
     if (!isDoor(door) || !action || !doors.allows(door, action)) {
       return c.json({ ok: false, message: t.doorError }, 400);
     }
-    const name = doors.title(door);
+    // `name` is shown to the guest in their language; notifications to the host use the German label.
+    const name = doors.title(door, lang);
+    const hostName = doors.title(door);
     const log = { door, action, guest_name: stay.guest_name, at: Date.now() };
     const success =
       action === "lock" ? t.lockedDoor(name) : action === "unlock" ? t.unlocked(name) : doors.buzzes(door) ? t.openedBuzzer(name) : t.openedLatch(name);
@@ -248,7 +250,7 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
       if (loc.reason === "too_far") {
         notifier.send(
           "Guest Opener: Öffnen abgelehnt",
-          `${stay.guest_name} wollte „${name}“ aus ${((distance_m ?? 0) / 1000).toFixed(1)} km Entfernung öffnen.`,
+          `${stay.guest_name} wollte „${hostName}“ aus ${((distance_m ?? 0) / 1000).toFixed(1)} km Entfernung öffnen.`,
         );
       }
       const message = loc.reason === "too_far" ? t.tooFar : loc.reason === "inaccurate" ? t.inaccurate : t.geoUnavailable;
@@ -264,7 +266,7 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
     store.logAccess({ ...log, success: result.ok, detail: result.detail, distance_m });
     if (!result.ok) {
       store.setLastOpen(stay.token, door, previous);
-      notifier.send("Guest Opener: Tür reagiert nicht", `${name} (${stay.guest_name}): ${result.detail}`);
+      notifier.send("Guest Opener: Tür reagiert nicht", `${hostName} (${stay.guest_name}): ${result.detail}`);
       return c.json({ ok: false, message: t.doorError }, 502);
     }
     const firstOpen = stay.role === "guest" && !stay.last_open.house && !stay.last_open.apartment;
@@ -272,7 +274,7 @@ export function createApp(cfg: Config, store: Store, doors: Doors, notifier: Pic
       const verb = action === "unlock" ? "aufgesperrt" : "geöffnet";
       notifier.send(
         "Guest Opener: Gast angekommen",
-        `${stay.guest_name} hat zum ersten Mal ${name} ${verb}${distance_m === null ? "" : ` (${distance_m} m entfernt)`}.`,
+        `${stay.guest_name} hat zum ersten Mal ${hostName} ${verb}${distance_m === null ? "" : ` (${distance_m} m entfernt)`}.`,
       );
     }
     return c.json({ ok: true, message: success });

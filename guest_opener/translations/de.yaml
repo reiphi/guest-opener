@@ -29,6 +29,9 @@ configuration:
   door_house_name:
     name: Haustür – Bezeichnung
     description: Steht auf den Knöpfen und in der Gästenachricht. Leer = Haustür.
+  door_house_name_en:
+    name: Haustür – englische Bezeichnung
+    description: Für Gäste mit englischer Seite und Nachricht. Leer = Front door, oder die deutsche Bezeichnung, wenn sie geändert wurde.
   door_house_mode:
     name: Haustür – Betriebsart
     description: open = nur öffnen. open_and_lock = Falle ziehen und zusperren. unlock_and_lock = aufsperren und zusperren. Die letzten beiden nur bei lock.* oder mock.
@@ -41,6 +44,9 @@ configuration:
   door_apartment_name:
     name: Wohnungstür – Bezeichnung
     description: Steht auf den Knöpfen und in der Gästenachricht. Leer = Wohnungstür.
+  door_apartment_name_en:
+    name: Wohnungstür – englische Bezeichnung
+    description: Für Gäste mit englischer Seite und Nachricht. Leer = Apartment door, oder die deutsche Bezeichnung, wenn sie geändert wurde.
   door_apartment_mode:
     name: Wohnungstür – Betriebsart
     description: open = nur öffnen. open_and_lock = Falle ziehen und zusperren. unlock_and_lock = aufsperren und zusperren. Die letzten beiden nur bei lock.* oder mock.

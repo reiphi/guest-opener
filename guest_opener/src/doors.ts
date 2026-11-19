@@ -1,5 +1,6 @@
 import type { Config } from "./config";
 import type { HomeAssistant } from "./homeassistant";
+import type { Lang } from "./i18n";
 
 export const DOORS = ["house", "apartment"] as const;
 export type Door = (typeof DOORS)[number];
@@ -53,7 +54,9 @@ export function doorMode(cfg: Config, door: Door): DoorMode {
   return door === "house" ? cfg.doorHouseMode : cfg.doorApartmentMode;
 }
 
-export function doorTitle(cfg: Config, door: Door): string {
+/** German labels for the admin pages and notifications, English ones for English-speaking guests. */
+export function doorTitle(cfg: Config, door: Door, lang: Lang = "de"): string {
+  if (lang === "en") return door === "house" ? cfg.doorHouseNameEn : cfg.doorApartmentNameEn;
   return door === "house" ? cfg.doorHouseName : cfg.doorApartmentName;
 }
 
@@ -96,8 +99,8 @@ export class Doors {
     return doorEnabled(this.cfg, door);
   }
 
-  title(door: Door): string {
-    return doorTitle(this.cfg, door);
+  title(door: Door, lang: Lang = "de"): string {
+    return doorTitle(this.cfg, door, lang);
   }
 
   actions(door: Door): DoorAction[] {

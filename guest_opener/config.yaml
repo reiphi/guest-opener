@@ -1,5 +1,5 @@
 name: Guest Opener
-version: "1.3.4"
+version: "1.3.5"
 slug: guest_opener
 description: Digitaler Gästeschlüssel – Link + PIN öffnet Haus- und Wohnungstür über Home-Assistant-Geräte
 url: https://github.com/reiphi/guest-opener
@@ -40,10 +40,12 @@ schema:
   admin_password: password
   door_house: str
   door_house_name: str?
+  door_house_name_en: str?
   door_house_mode: list(open|open_and_lock|unlock_and_lock)
   door_house_battery: str?
   door_apartment: str
   door_apartment_name: str?
+  door_apartment_name_en: str?
   door_apartment_mode: list(open|open_and_lock|unlock_and_lock)
   door_apartment_battery: str?
   notify_service: str?

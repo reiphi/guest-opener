@@ -61,7 +61,9 @@ test("geofence radius 0 disables the location check", async () => {
 });
 
 test("a disabled door is hidden and rejects actions", async () => {
-  const s = setup(testConfig({ doorHouse: "off", doorApartmentName: "Hoftor", doorApartmentMode: "unlock_and_lock" }));
+  const s = setup(
+    testConfig({ doorHouse: "off", doorApartmentName: "Hoftor", doorApartmentNameEn: "Hoftor", doorApartmentMode: "unlock_and_lock" }),
+  );
   const stay = s.addStay();
   await s.loginGuest(stay);
   const html = await (await s.request(`/g/${stay.token}`)).text();
@@ -136,6 +138,28 @@ test("the guest message names the property without an article", () => {
   const cfg = testConfig({ propertyName: "Haus Alpenblick" });
   const stay = { token: "t", role: "guest", guest_name: "Erika", pin: "123456", valid_from: 0, valid_until: 1 } as Stay;
   assert.match(guestMessageText(cfg, stay, "https://x/g/t"), /Schlüssel für „Haus Alpenblick“:/);
+});
+
+test("English guests see English door names, the host is notified with the German ones", async () => {
+  const s = setup(testConfig({ doorHouseNameEn: "Main entrance" }));
+  const stay = s.addStay();
+  await s.loginGuest(stay);
+  const en = { "accept-language": "en" };
+  const html = await (await s.request(`/g/${stay.token}`, { headers: en })).text();
+  assert.match(html, /Open Main entrance/);
+  assert.match(html, /Lock Apartment door/);
+  assert.doesNotMatch(html, /Haustür|Wohnungstür/);
+  const res = await s.request(`/g/${stay.token}/door`, {
+    method: "POST",
+    headers: { ...en, "content-type": "application/json" },
+    body: JSON.stringify({ door: "house", ...nearby }),
+  });
+  assert.match((await res.json()).message, /Main entrance/);
+  assert.match(s.notifications.at(-1)!.message, /zum ersten Mal Haustür geöffnet/);
+
+  const message = guestMessageText(testConfig({ doorHouseNameEn: "Main entrance" }), stay as Stay, "https://x/g/t", "en");
+  assert.match(message, /tap “Open Main entrance”/);
+  assert.doesNotMatch(message, /Haustür|Wohnungstür/);
 });
 
 // Guests are addressed formally ("Sie"); the admin pages are for the hosts and may use "du".

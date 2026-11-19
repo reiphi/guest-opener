@@ -29,6 +29,9 @@ configuration:
   door_house_name:
     name: Front door – label
     description: Shown on the buttons and in the guest message. Empty keeps the default Haustür.
+  door_house_name_en:
+    name: Front door – English label
+    description: For guests who see the page and message in English. Empty = Front door, or the German label if you changed it.
   door_house_mode:
     name: Front door – mode
     description: open = open only. open_and_lock = unlatch and lock. unlock_and_lock = unlock and lock. The last two need a lock.* or mock.
@@ -41,6 +44,9 @@ configuration:
   door_apartment_name:
     name: Apartment door – label
     description: Shown on the buttons and in the guest message. Empty keeps the default Wohnungstür.
+  door_apartment_name_en:
+    name: Apartment door – English label
+    description: For guests who see the page and message in English. Empty = Apartment door, or the German label if you changed it.
   door_apartment_mode:
     name: Apartment door – mode
     description: open = open only. open_and_lock = unlatch and lock. unlock_and_lock = unlock and lock. The last two need a lock.* or mock.
